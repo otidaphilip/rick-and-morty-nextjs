@@ -29,7 +29,7 @@
 
 /* Image styling */
 .character-image {
-  width: 180px;
+  width: 190px;
   height: 180px;
   border-radius: 12px;
   object-fit: cover;
@@ -39,7 +39,7 @@
 /* Name as button-style container */
 .character-name {
   margin-top: 12px;
-  padding: 10px 15px;
+  padding: 10px 5px;
   background-color: #1f2937; /* dark gray */
   color: white;
   border-radius: 8px;
