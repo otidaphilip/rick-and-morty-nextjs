@@ -57,3 +57,38 @@
   background-color: #4ade80; /* green highlight */
   color: #000;
 }
+
+/* ===== Episodes Page ===== */
+
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+.episode-card {
+  padding: 20px;
+  background-color: #111827;
+  border-radius: 12px;
+  text-decoration: none;
+  color: white;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.episode-code {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #4ade80;
+  margin-bottom: 8px;
+}
+
+.episode-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.episode-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}

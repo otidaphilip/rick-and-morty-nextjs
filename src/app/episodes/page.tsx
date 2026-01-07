@@ -4,7 +4,6 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 
-// GraphQL query
 const GET_EPISODES = gql`
   query GetEpisodes {
     episodes {
@@ -17,7 +16,6 @@ const GET_EPISODES = gql`
   }
 `;
 
-// TypeScript types
 type EpisodesData = {
   episodes: {
     results: {
@@ -33,17 +31,24 @@ export default function EpisodesPage() {
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error loading episodes</p>;
+  if (!data) return <p>No data</p>;
 
   return (
-    <div>
-      <h1>Episodes</h1>
-      {data!.episodes.results.map((ep) => (
-        <Link key={ep.id} href={`/episode/${ep.id}`}>
-          <p>
-            {ep.episode} - {ep.name}
-          </p>
-        </Link>
-      ))}
-    </div>
+    <main className="container">
+      <h1 className="title">Episodes</h1>
+
+      <div className="episodes-grid">
+        {data.episodes.results.map((ep) => (
+          <Link
+            key={ep.id}
+            href={`/episode/${ep.id}`}
+            className="episode-card"
+          >
+            <div className="episode-code">{ep.episode}</div>
+            <div className="episode-name">{ep.name}</div>
+          </Link>
+        ))}
+      </div>
+    </main>
   );
 }
