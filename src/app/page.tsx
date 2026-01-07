@@ -40,6 +40,13 @@ export default function HomePage() {
     <main className="container">
       <h1 className="title">Rick and Morty Characters</h1>
 
+      {/* View Episodes Button */}
+      <div className="view-episodes-wrapper">
+        <Link href="/episodes" className="view-episodes-btn">
+          View Episodes
+        </Link>
+      </div>
+
       <div className="character-grid">
         {data.characters.results.map((char) => (
           <Link

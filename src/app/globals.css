@@ -92,3 +92,34 @@
   transform: translateY(-6px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
 }
+
+/* ===== View Episodes Button ===== */
+
+.view-episodes-wrapper {
+  display: flex;
+  justify-content: flex-start; /* aligns button to the left */
+  margin-bottom: 30px;
+}
+
+.view-episodes-btn {
+  padding: 10px 10px;          /* comfortable padding */
+  background-color: #1f2937;   /* dark gray */
+  color: white;
+  font-weight: bold;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  width: 90%;                  /* responsive width */
+  max-width: 300px;            /* prevents button from being too wide */
+  text-align: center;
+}
+
+.view-episodes-btn:hover {
+  background-color: #4ade80; /* green highlight */
+  color: #000;
+  transform: translateY(-2px);
+}
+
+
