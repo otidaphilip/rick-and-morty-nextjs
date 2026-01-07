@@ -37,13 +37,24 @@ export default function HomePage() {
   if (!data) return <p>No data</p>;
 
   return (
-    <main>
-      <h1>Rick and Morty Characters</h1>
-      <div>
+    <main className="container">
+      <h1 className="title">Rick and Morty Characters</h1>
+
+      <div className="character-grid">
         {data.characters.results.map((char) => (
-          <Link key={char.id} href={`/character/${char.id}`}>
-            <img src={char.image} width={150} alt={char.name} />
-            <p>{char.name}</p>
+          <Link
+            key={char.id}
+            href={`/character/${char.id}`}
+            className="character-card"
+          >
+            <img
+              src={char.image}
+              alt={char.name}
+              className="character-image"
+            />
+            <div className="character-name">
+              {char.name}
+            </div>
           </Link>
         ))}
       </div>

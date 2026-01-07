@@ -1,26 +1,59 @@
-@import "tailwindcss";
+/* ===== Characters Page ===== */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+.container {
+  padding: 40px;
 }
 
-inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.title {
+  text-align: center;
+  font-size: 2.2rem;
+  margin-bottom: 40px;
+  font-weight: bold;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Grid: 5 characters per row */
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 25px;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Card container */
+.character-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Image styling */
+.character-image {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Name as button-style container */
+.character-name {
+  margin-top: 12px;
+  padding: 10px 15px;
+  background-color: #1f2937; /* dark gray */
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+}
+
+/* Hover effect */
+.character-card:hover {
+  transform: translateY(-6px);
+}
+
+.character-card:hover .character-name {
+  background-color: #4ade80; /* green highlight */
+  color: #000;
 }
