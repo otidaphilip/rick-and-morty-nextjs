@@ -63,19 +63,23 @@ export default function CharacterPage() {
   const char = data.character;
 
   return (
-  <div className="character-page">
-    <div className="character-card horizontal">
-      {/* LEFT IMAGE */}
+<div className="character-page">
+  {/* CHARACTER CARD */}
+  <div className="character-card">
+    {/* LEFT: IMAGE */}
+    <div className="character-image-wrapper">
       <img
         src={char.image}
         alt={char.name}
         className="character-image"
       />
+    </div>
 
-      {/* RIGHT INFO */}
-      <div className="character-info">
-        <h1>{char.name}</h1>
+    {/* RIGHT: INFO */}
+    <div className="character-info">
+      <h1 className="character-name">{char.name}</h1>
 
+      <div className="character-meta">
         <p>
           <span className="label">Status:</span> {char.status}
         </p>
@@ -86,33 +90,35 @@ export default function CharacterPage() {
           <span className="label">Last known location:</span>{" "}
           {char.location?.name}
         </p>
+      </div>
 
-        <div className="episode-info">
-          <p>
-            <span className="label">First seen in:</span>{" "}
-            {char.episode[0]?.name}
-          </p>
-          <p>
-            <span className="label">Last seen in:</span>{" "}
-            {char.episode[char.episode.length - 1]?.name}
-          </p>
-        </div>
+      <div className="seen-info">
+        <p>
+          <span className="label">First seen:</span>{" "}
+          {char.episode[0]?.name}
+        </p>
+        <p>
+          <span className="label">Last seen:</span>{" "}
+          {char.episode[char.episode.length - 1]?.name}
+        </p>
       </div>
     </div>
-
-    {/* EPISODES LIST */}
-    <div className="episodes-section">
-      <h2>Episodes Appeared In</h2>
-
-      <ul className="episodes-list">
-        {char.episode.map((ep) => (
-          <li key={ep.id} className="episode-item">
-            {ep.name}
-          </li>
-        ))}
-      </ul>
-    </div>
   </div>
+
+  {/* EPISODES */}
+  <section className="episodes-section">
+    <h2>Episodes Appeared In</h2>
+
+    <div className="episodes-grid">
+      {char.episode.map((ep) => (
+        <div key={ep.id} className="episode-card">
+          <span className="episode-title">{ep.name}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+</div>
+
 );
 
 }
