@@ -36,6 +36,14 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
+.character-image1 {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
 /* Name as button-style container */
 .character-name {
   margin-top: 12px;
@@ -129,4 +137,3 @@
     font-size: 0.9rem;
   }
 }
-

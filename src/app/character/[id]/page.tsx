@@ -71,7 +71,7 @@ export default function CharacterPage() {
       <img
         src={char.image}
         alt={char.name}
-        className="character-image"
+        className="character-image1"
       />
     </div>
 
