@@ -11,6 +11,9 @@ const GET_CHARACTER = gql`
       status
       species
       image
+      location {
+        name
+      }
       episode {
         id
         name
@@ -19,8 +22,13 @@ const GET_CHARACTER = gql`
   }
 `;
 
+
 interface Episode {
   id: string;
+  name: string;
+}
+
+interface Location {
   name: string;
 }
 
@@ -29,12 +37,14 @@ interface Character {
   status: string;
   species: string;
   image: string;
+  location: Location;
   episode: Episode[];
 }
 
 interface CharacterData {
   character: Character;
 }
+
 
 export default function CharacterPage() {
   const params = useParams();
@@ -46,25 +56,63 @@ export default function CharacterPage() {
     }
   );
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading character</p>;
+  if (loading) return <p className="loading">Loading...</p>;
+  if (error) return <p className="error">Error loading character</p>;
   if (!data) return <p>No data</p>;
 
   const char = data.character;
 
   return (
-    <div>
-      <h1>{char.name}</h1>
-      <img src={char.image} width={200} alt={char.name} />
-      <p>Status: {char.status}</p>
-      <p>Species: {char.species}</p>
+  <div className="character-page">
+    <div className="character-card horizontal">
+      {/* LEFT IMAGE */}
+      <img
+        src={char.image}
+        alt={char.name}
+        className="character-image"
+      />
 
-      <h2>Episodes</h2>
-      <ul>
+      {/* RIGHT INFO */}
+      <div className="character-info">
+        <h1>{char.name}</h1>
+
+        <p>
+          <span className="label">Status:</span> {char.status}
+        </p>
+        <p>
+          <span className="label">Species:</span> {char.species}
+        </p>
+        <p>
+          <span className="label">Last known location:</span>{" "}
+          {char.location?.name}
+        </p>
+
+        <div className="episode-info">
+          <p>
+            <span className="label">First seen in:</span>{" "}
+            {char.episode[0]?.name}
+          </p>
+          <p>
+            <span className="label">Last seen in:</span>{" "}
+            {char.episode[char.episode.length - 1]?.name}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* EPISODES LIST */}
+    <div className="episodes-section">
+      <h2>Episodes Appeared In</h2>
+
+      <ul className="episodes-list">
         {char.episode.map((ep) => (
-          <li key={ep.id}>{ep.name}</li>
+          <li key={ep.id} className="episode-item">
+            {ep.name}
+          </li>
         ))}
       </ul>
     </div>
-  );
+  </div>
+);
+
 }
