@@ -50,18 +50,34 @@ export default function EpisodePage() {
   const ep = data.episode;
 
   return (
-    <div>
-      <h1>{ep.name}</h1>
-      <p>{ep.episode}</p>
-      <p>Air Date: {ep.air_date}</p>
-
-      <h2>Characters</h2>
-      {ep.characters.map((char) => (
-        <div key={char.id}>
-          <img src={char.image} width={100} alt={char.name} />
-          <p>{char.name}</p>
-        </div>
-      ))}
+  <div className="container">
+    {/* Episode Header */}
+    <div className="episode-detail-card">
+      <div className="episode-header">
+        <span className="episode-badge">{ep.episode}</span>
+        <h1 className="episode-title">{ep.name}</h1>
+        <p className="episode-airdate">Air Date: {ep.air_date}</p>
+      </div>
     </div>
-  );
+
+    {/* Characters Section */}
+    <section className="episode-characters">
+      <h2 className="section-title">Characters Appeared</h2>
+
+      <div className="episode-character-grid">
+        {ep.characters.map((char) => (
+          <div key={char.id} className="episode-character-card">
+            <img
+              src={char.image}
+              alt={char.name}
+              className="episode-character-image"
+            />
+            <span className="episode-character-name">{char.name}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  </div>
+);
+
 }
