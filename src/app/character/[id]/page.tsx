@@ -65,7 +65,7 @@ export default function CharacterPage() {
   return (
 <div className="character-page">
   {/* CHARACTER CARD */}
-  <div className="character-card">
+  <div className="character-card1">
     {/* LEFT: IMAGE */}
     <div className="character-image-wrapper">
       <img
@@ -77,7 +77,7 @@ export default function CharacterPage() {
 
     {/* RIGHT: INFO */}
     <div className="character-info">
-      <h1 className="character-name">{char.name}</h1>
+      <h1 className="character-name1">{char.name}</h1>
 
       <div className="character-meta">
         <p>
@@ -110,12 +110,16 @@ export default function CharacterPage() {
     <h2>Episodes Appeared In</h2>
 
     <div className="episodes-grid">
-      {char.episode.map((ep) => (
-        <div key={ep.id} className="episode-card">
-          <span className="episode-title">{ep.name}</span>
-        </div>
-      ))}
+  {char.episode.map((ep, index) => (
+    <div key={ep.id} className="episode-card">
+      <span className="episode-title">
+        S{String(Math.floor(index / 10) + 1).padStart(2, "0")}
+        E{String(index + 1).padStart(2, "0")}: {ep.name}
+      </span>
     </div>
+  ))}
+</div>
+
   </section>
 </div>
 
