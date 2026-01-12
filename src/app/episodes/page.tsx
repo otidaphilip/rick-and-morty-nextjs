@@ -29,9 +29,9 @@ type EpisodesData = {
 export default function EpisodesPage() {
   const { data, loading, error } = useQuery<EpisodesData>(GET_EPISODES);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading episodes</p>;
-  if (!data) return <p>No data</p>;
+  if (loading) return <p className="title">Loading...</p>;
+  if (error) return <p className="title">Error loading episodes</p>;
+  if (!data) return <p className="title">No data found</p>;
 
   return (
     <main className="container">
@@ -44,8 +44,11 @@ export default function EpisodesPage() {
             href={`/episode/${ep.id}`}
             className="episode-card"
           >
-            <div className="episode-code">{ep.episode}</div>
-            <div className="episode-name">{ep.name}</div>
+            {/* Episode code badge */}
+            <span className="episode-badge">{ep.episode}</span>
+
+            {/* Episode name */}
+            <h3 className="episode-title">{ep.name}</h3>
           </Link>
         ))}
       </div>
