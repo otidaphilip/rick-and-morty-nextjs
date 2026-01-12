@@ -50,34 +50,39 @@ export default function EpisodePage() {
   const ep = data.episode;
 
   return (
-  <div className="container">
-    {/* Episode Header */}
-    <div className="episode-detail-card">
-      <div className="episode-header">
-        <span className="episode-badge">{ep.episode}</span>
-        <h1 className="episode-title">{ep.name}</h1>
-        <p className="episode-airdate">Air Date: {ep.air_date}</p>
+  <main className="page-episode-detail">
+    <div className="container">
+      {/* Episode Header */}
+      <div className="episode-detail-card">
+        <div className="episode-header">
+          <span className="episode-badge">{ep.episode}</span>
+          <h1 className="episode-title">{ep.name}</h1>
+          <p className="episode-airdate">Air Date: {ep.air_date}</p>
+        </div>
       </div>
+
+      {/* Characters Section */}
+      <section className="episode-characters">
+        <h2 className="section-title">Characters Appeared</h2>
+
+        <div className="episode-character-grid">
+          {ep.characters.map((char) => (
+            <div key={char.id} className="episode-character-card">
+              <img
+                src={char.image}
+                alt={char.name}
+                className="episode-character-image"
+              />
+              <span className="episode-character-name">
+                {char.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
-
-    {/* Characters Section */}
-    <section className="episode-characters">
-      <h2 className="section-title">Characters Appeared</h2>
-
-      <div className="episode-character-grid">
-        {ep.characters.map((char) => (
-          <div key={char.id} className="episode-character-card">
-            <img
-              src={char.image}
-              alt={char.name}
-              className="episode-character-image"
-            />
-            <span className="episode-character-name">{char.name}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  </div>
+  </main>
 );
+
 
 }

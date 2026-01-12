@@ -36,8 +36,9 @@ export default function HomePage() {
   if (error) return <p>Error loading characters</p>;
   if (!data) return <p>No data</p>;
 
-  return (
-    <main className="container">
+return (
+  <main className="page-characters">
+    <div className="container">
       <h1 className="title">Rick and Morty Characters</h1>
 
       {/* View Episodes Button */}
@@ -65,6 +66,7 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
-    </main>
-  );
+    </div>
+  </main>
+);
 }
