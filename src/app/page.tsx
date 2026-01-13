@@ -3,6 +3,7 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
+import { useState } from "react";
 
 const GET_CHARACTERS = gql`
   query GetCharacters {
@@ -29,12 +30,18 @@ interface CharactersData {
 }
 
 export default function HomePage() {
-  const { data, loading, error } =
-    useQuery<CharactersData>(GET_CHARACTERS);
+  const { data, loading, error } = useQuery<CharactersData>(GET_CHARACTERS);
+  const [search, setSearch] = useState("");
+
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error loading characters</p>;
   if (!data) return <p>No data</p>;
+
+    // 🔍 Filter characters by name
+  const filteredCharacters = data.characters.results.filter((char) =>
+    char.name.toLowerCase().includes(search.toLowerCase())
+  );
 
 return (
   <main className="page-characters">
@@ -48,6 +55,16 @@ return (
         </Link>
       </div>
 
+      {/* 🔍 Search Input */}
+        <input
+          type="text"
+          placeholder="Search character..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
+
+        {/* Character Grid */}
       <div className="character-grid">
         {data.characters.results.map((char) => (
           <Link
