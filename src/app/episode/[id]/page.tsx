@@ -3,6 +3,7 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 
 const GET_EPISODE = gql`
   query GetEpisode($id: ID!) {
@@ -37,7 +38,8 @@ interface EpisodeData {
 }
 
 export default function EpisodePage() {
-  const params = useParams();
+  // ✅ Get dynamic route param: /episode/[id]
+  const params = useParams<{ id: string }>();
 
   const { data, loading, error } = useQuery<EpisodeData>(GET_EPISODE, {
     variables: { id: params.id },
@@ -50,39 +52,46 @@ export default function EpisodePage() {
   const ep = data.episode;
 
   return (
-  <main className="page-episode-detail">
-    <div className="container">
-      {/* Episode Header */}
-      <div className="episode-detail-card">
-        <div className="episode-header">
-          <span className="episode-badge">{ep.episode}</span>
-          <h1 className="episode-title">{ep.name}</h1>
-          <p className="episode-airdate">Air Date: {ep.air_date}</p>
+    <main className="page-episode-detail">
+      <div className="container">
+        {/* Episode Header */}
+        <div className="episode-detail-card">
+          <div className="episode-header">
+            <span className="episode-badge">{ep.episode}</span>
+            <h1 className="episode-title">{ep.name}</h1>
+            <p className="episode-airdate">
+              Air Date: {ep.air_date}
+            </p>
+          </div>
         </div>
+
+        {/* Characters Section */}
+        <section className="episode-characters">
+          <h2 className="section-title">Characters Appeared</h2>
+
+          <div className="episode-character-grid">
+            {ep.characters.map((char) => (
+              <div
+                key={char.id}
+                className="episode-character-card"
+              >
+                {/* ✅ next/image used properly */}
+                <Image
+                  src={char.image}
+                  alt={char.name}
+                  width={140}
+                  height={140}
+                  className="episode-character-image"
+                />
+
+                <span className="episode-character-name">
+                  {char.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
-
-      {/* Characters Section */}
-      <section className="episode-characters">
-        <h2 className="section-title">Characters Appeared</h2>
-
-        <div className="episode-character-grid">
-          {ep.characters.map((char) => (
-            <div key={char.id} className="episode-character-card">
-              <img
-                src={char.image}
-                alt={char.name}
-                className="episode-character-image"
-              />
-              <span className="episode-character-name">
-                {char.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  </main>
-);
-
-
+    </main>
+  );
 }
