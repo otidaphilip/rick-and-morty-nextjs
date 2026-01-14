@@ -4,6 +4,7 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 const GET_CHARACTER = gql`
   query GetCharacter($id: ID!) {
@@ -45,40 +46,62 @@ interface CharacterData {
   character: Character;
 }
 
+const EPISODES_PER_LOAD = 6;
+
 export default function CharacterPage() {
   const params = useParams<{ id: string }>();
+  const { data, loading, error } = useQuery<CharacterData>(GET_CHARACTER, {
+    variables: { id: params.id },
+  });
 
-  const { data, loading, error } = useQuery<CharacterData>(
-    GET_CHARACTER,
-    {
-      variables: { id: params.id },
-    }
-  );
+  const [visibleCount, setVisibleCount] = useState(EPISODES_PER_LOAD);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + EPISODES_PER_LOAD, data!.character.episode.length)
+          );
+        }
+      },
+      {
+        root: containerRef.current, // 👈 IMPORTANT
+        threshold: 1,
+      }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [data]);
 
   if (loading) return <p className="loading">Loading...</p>;
   if (error) return <p className="error">Error loading character</p>;
   if (!data) return <p>No data</p>;
 
   const char = data.character;
+  const visibleEpisodes = char.episode.slice(0, visibleCount);
 
   return (
     <main className="page-character-detail">
       <div className="container">
         {/* CHARACTER CARD */}
         <div className="character-card1">
-          {/* LEFT IMAGE */}
-          <div className="character-image-wrapper">
-            <Image
-              src={char.image}
-              alt={char.name}
-              width={260}
-              height={260}
-              className="character-image1"
-              priority
-            />
-          </div>
+          <Image
+            src={char.image}
+            alt={char.name}
+            width={260}
+            height={260}
+            className="character-image1"
+            priority
+          />
 
-          {/* RIGHT INFO */}
           <div className="character-info">
             <h1 className="character-name1">{char.name}</h1>
 
@@ -112,15 +135,25 @@ export default function CharacterPage() {
         <section className="episodes-section">
           <h2 className="section-title">Episodes Appeared In</h2>
 
-          <div className="episodes-grid">
-            {char.episode.map((ep, index) => (
-              <div key={ep.id} className="episode-card">
-                <span className="episode-title">
-                  S{String(Math.floor(index / 10) + 1).padStart(2, "0")}
-                  E{String(index + 1).padStart(2, "0")}: {ep.name}
-                </span>
-              </div>
-            ))}
+          {/* 👇 Scrollable container */}
+          <div
+            ref={containerRef}
+            className="episodes-scroll-container"
+          >
+            <div className="episodes-grid">
+              {visibleEpisodes.map((ep, index) => (
+                <div key={ep.id} className="episode-card">
+                  <span className="episode-title">
+                    E{String(index + 1).padStart(2, "0")}: {ep.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* 👇 Sentinel */}
+            {visibleCount < char.episode.length && (
+              <div ref={loadMoreRef} style={{ height: 1 }} />
+            )}
           </div>
         </section>
       </div>
