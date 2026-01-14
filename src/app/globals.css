@@ -204,13 +204,14 @@
 .episodes-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 25px;
+  gap: 20px;
   margin-top: 30px;
 }
 
 .episode-card {
-  padding: 18px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
 
   background: linear-gradient(
     135deg,
