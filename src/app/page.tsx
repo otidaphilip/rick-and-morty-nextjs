@@ -81,7 +81,7 @@ export default function HomePage() {
           {/* LEFT SIDE */}
           <div className="toolbar-left">
             <Link href="/episodes" className="view-episodes-btn">
-              View Episodes
+              <center>View Episodes</center>
             </Link>
 
             {/* FILTER DROPDOWNS */}
