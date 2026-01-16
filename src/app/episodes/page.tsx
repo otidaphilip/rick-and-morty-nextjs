@@ -37,48 +37,55 @@ export default function EpisodesPage() {
 
   const episodes = data.episodes.results;
 
-  // ✅ Separate by season
   const season1 = episodes.filter((ep) => ep.episode.startsWith("S01"));
   const season2 = episodes.filter((ep) => ep.episode.startsWith("S02"));
 
   return (
     <main className="page-episodes">
-    <div className="container">
-      <h1 className="title">Episodes</h1>
+      <div className="container">
 
-      {/* ===== SEASON 1 ===== */}
-      <section>
-        <h2 className="section-title">Season 1</h2>
-        <div className="episodes-grid">
-          {season1.map((ep) => (
-            <Link
-              key={ep.id}
-              href={`/episode/${ep.id}`}
-              className="episode-card"
-            >
-              <div className="episode-code">{ep.episode}</div>
-              <div className="episode-name">{ep.name}</div>
-            </Link>
-          ))}
-        </div>
-      </section>
+        <h1 className="title">Episodes</h1>
 
-      {/* ===== SEASON 2 ===== */}
-      <section style={{ marginTop: "60px" }}>
-        <h2 className="section-title">Season 2</h2>
-        <div className="episodes-grid">
-          {season2.map((ep) => (
-            <Link
-              key={ep.id}
-              href={`/episode/${ep.id}`}
-              className="episode-card"
-            >
-              <div className="episode-code">{ep.episode}</div>
-              <div className="episode-name">{ep.name}</div>
-            </Link>
-          ))}
+        {/* 🔙 BACK BUTTON */}
+        <div className="back-button-wrapper">
+          <Link href="/" className="view-episodes-btn">
+            ← Back to Characters
+          </Link>
         </div>
-      </section>
+
+        {/* ===== SEASON 1 ===== */}
+        <section>
+          <h2 className="section-title">Season 1</h2>
+          <div className="episodes-grid">
+            {season1.map((ep) => (
+              <Link
+                key={ep.id}
+                href={`/episode/${ep.id}`}
+                className="episode-card"
+              >
+                <div className="episode-code">{ep.episode}</div>
+                <div className="episode-name">{ep.name}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ===== SEASON 2 ===== */}
+        <section style={{ marginTop: "60px" }}>
+          <h2 className="section-title">Season 2</h2>
+          <div className="episodes-grid">
+            {season2.map((ep) => (
+              <Link
+                key={ep.id}
+                href={`/episode/${ep.id}`}
+                className="episode-card"
+              >
+                <div className="episode-code">{ep.episode}</div>
+                <div className="episode-name">{ep.name}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
