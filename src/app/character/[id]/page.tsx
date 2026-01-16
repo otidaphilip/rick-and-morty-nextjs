@@ -71,7 +71,7 @@ export default function CharacterPage() {
         }
       },
       {
-        root: containerRef.current, // 👈 IMPORTANT
+        root: containerRef.current, // IMPORTANT
         threshold: 1,
       }
     );
