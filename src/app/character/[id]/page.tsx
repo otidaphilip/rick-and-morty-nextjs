@@ -100,7 +100,7 @@ export default function CharacterPage() {
         {/* 🔙 BACK BUTTON */}
         <div className="back-button-wrapper">
           <Link href="/" className="view-episodes-btn">
-            ← Back to Characters
+            ← Back to Character List
           </Link>
         </div>
 

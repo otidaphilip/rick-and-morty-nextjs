@@ -4,6 +4,7 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 const GET_EPISODE = gql`
   query GetEpisode($id: ID!) {
@@ -38,23 +39,30 @@ interface EpisodeData {
 }
 
 export default function EpisodePage() {
-  // ✅ Get dynamic route param: /episode/[id]
   const params = useParams<{ id: string }>();
 
   const { data, loading, error } = useQuery<EpisodeData>(GET_EPISODE, {
     variables: { id: params.id },
   });
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading episode</p>;
-  if (!data) return <p>No data</p>;
+  if (loading) return <p className="title">Loading...</p>;
+  if (error) return <p className="title">Error loading episode</p>;
+  if (!data) return <p className="title">No data</p>;
 
   const ep = data.episode;
 
   return (
     <main className="page-episode-detail">
       <div className="container">
-        {/* Episode Header */}
+
+        {/* 🔙 BACK BUTTON */}
+        <div className="back-button-wrapper">
+          <Link href="/episodes" className="view-episodes-btn">
+            ← Back to Episode List
+          </Link>
+        </div>
+
+        {/* EPISODE HEADER */}
         <div className="episode-detail-card">
           <div className="episode-header">
             <span className="episode-badge">{ep.episode}</span>
@@ -65,7 +73,7 @@ export default function EpisodePage() {
           </div>
         </div>
 
-        {/* Characters Section */}
+        {/* CHARACTERS SECTION */}
         <section className="episode-characters">
           <h2 className="section-title">Characters Appeared</h2>
 
@@ -75,7 +83,6 @@ export default function EpisodePage() {
                 key={char.id}
                 className="episode-character-card"
               >
-                {/* ✅ next/image used properly */}
                 <Image
                   src={char.image}
                   alt={char.name}
@@ -91,6 +98,7 @@ export default function EpisodePage() {
             ))}
           </div>
         </section>
+
       </div>
     </main>
   );
