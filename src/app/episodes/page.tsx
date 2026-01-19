@@ -46,14 +46,14 @@ export default function EpisodesPage() {
 
         <h1 className="title">Episodes</h1>
 
-        {/* 🔙 BACK BUTTON */}
+        {/* BACK BUTTON */}
         <div className="back-button-wrapper">
           <Link href="/" className="view-episodes-btn">
             ← Back to Characters
           </Link>
         </div>
 
-        {/* ===== SEASON 1 ===== */}
+        {/* SEASON 1 */}
         <section>
           <h2 className="section-title">Season 1</h2>
           <div className="episodes-grid">

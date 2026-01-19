@@ -4,6 +4,7 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const GET_CHARACTER = gql`
@@ -50,28 +51,32 @@ const EPISODES_PER_LOAD = 6;
 
 export default function CharacterPage() {
   const params = useParams<{ id: string }>();
+
   const { data, loading, error } = useQuery<CharacterData>(GET_CHARACTER, {
     variables: { id: params.id },
   });
 
   const [visibleCount, setVisibleCount] = useState(EPISODES_PER_LOAD);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
+  /* =========================
+     INFINITE SCROLL
+  ========================= */
   useEffect(() => {
-    if (!containerRef.current || !loadMoreRef.current) return;
+    if (!data || !scrollContainerRef.current || !loadMoreRef.current) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
+      ([entry]) => {
+        if (entry.isIntersecting) {
           setVisibleCount((prev) =>
-            Math.min(prev + EPISODES_PER_LOAD, data!.character.episode.length)
+            Math.min(prev + EPISODES_PER_LOAD, data.character.episode.length)
           );
         }
       },
       {
-        root: containerRef.current, // IMPORTANT
+        root: scrollContainerRef.current,
         threshold: 1,
       }
     );
@@ -91,7 +96,17 @@ export default function CharacterPage() {
   return (
     <main className="page-character-detail">
       <div className="container">
-        {/* CHARACTER CARD */}
+
+        {/* 🔙 BACK BUTTON */}
+        <div className="back-button-wrapper">
+          <Link href="/" className="view-episodes-btn">
+            ← Back to Characters
+          </Link>
+        </div>
+
+        {/* =========================
+            CHARACTER CARD
+        ========================= */}
         <div className="character-card1">
           <Image
             src={char.image}
@@ -131,13 +146,15 @@ export default function CharacterPage() {
           </div>
         </div>
 
-        {/* EPISODES */}
+        {/* =========================
+            EPISODES SECTION
+        ========================= */}
         <section className="episodes-section">
           <h2 className="section-title">Episodes Appeared In</h2>
 
-          {/* 👇 Scrollable container */}
+          {/* Scrollable container */}
           <div
-            ref={containerRef}
+            ref={scrollContainerRef}
             className="episodes-scroll-container"
           >
             <div className="episodes-grid">
@@ -150,7 +167,7 @@ export default function CharacterPage() {
               ))}
             </div>
 
-            {/* 👇 Sentinel */}
+            {/* Sentinel */}
             {visibleCount < char.episode.length && (
               <div ref={loadMoreRef} style={{ height: 1 }} />
             )}
