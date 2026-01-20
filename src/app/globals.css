@@ -259,7 +259,8 @@
 .episode-detail-card { 
   padding: 35px; 
   border-radius: 22px; 
-  margin-bottom: 50px; 
+  margin-bottom: 40px; 
+  margin-top: 25px;
   
   background: linear-gradient( 
     135deg, rgba(31, 41, 55, 0.95), 
@@ -346,11 +347,11 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  text-align: center;         /* center selected value */
+  text-align-last: center;    /* center selected option (important) */
 }
 
 .filters select {
-  text-align: center;         /* center selected value */
-  text-align-last: center;    /* center selected option (important) */
   padding: 8px 16px;
   width: 107px;
   height: 35px;

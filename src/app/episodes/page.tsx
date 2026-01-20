@@ -3,8 +3,9 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
+/* ================= GRAPHQL QUERY ================= */
 const GET_EPISODES = gql`
   query GetEpisodes($page: Int!) {
     episodes(page: $page) {
@@ -20,6 +21,7 @@ const GET_EPISODES = gql`
   }
 `;
 
+/* ================= TYPES ================= */
 type Episode = {
   id: string;
   name: string;
@@ -35,20 +37,26 @@ type EpisodesData = {
   };
 };
 
-const SEASONS_PER_PAGE = 2;
-
 export default function EpisodesPage() {
+  /* ---------- API STATE ---------- */
+  const [graphqlPage, setGraphqlPage] = useState(1); // For API
+  const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]); // Store all fetched episodes
+
+  /* ---------- APOLLO QUERY ---------- */
   const { data, loading, error, fetchMore } = useQuery<EpisodesData>(
     GET_EPISODES,
-    {
-      variables: { page: 1 },
-    }
+    { variables: { page: graphqlPage }, notifyOnNetworkStatusChange: true }
   );
 
-  const [currentPage, setCurrentPage] = useState(1);
+  /* ---------- UPDATE ALL EPISODES WHEN NEW PAGE LOADS ---------- */
+  if (data && data.episodes.results.length > 0) {
+    const merged = [...allEpisodes, ...data.episodes.results];
+    const uniqueResults = Array.from(new Map(merged.map(e => [e.id, e])).values());
+    if (uniqueResults.length !== allEpisodes.length) setAllEpisodes(uniqueResults);
+  }
 
-  /*FETCH ALL API PAGES*/
-  useEffect(() => {
+  /* ---------- LOAD MORE ---------- */
+  const loadMoreEpisodes = () => {
     if (!data?.episodes.info.next) return;
 
     fetchMore({
@@ -56,27 +64,30 @@ export default function EpisodesPage() {
       updateQuery: (prev, { fetchMoreResult }) => {
         if (!fetchMoreResult) return prev;
 
+        const mergedResults = [
+          ...prev.episodes.results,
+          ...fetchMoreResult.episodes.results,
+        ];
+
         return {
           episodes: {
             info: fetchMoreResult.episodes.info,
-            results: [
-              ...prev.episodes.results,
-              ...fetchMoreResult.episodes.results,
-            ],
+            results: mergedResults,
           },
         };
       },
     });
-  }, [data, fetchMore]);
 
-  if (loading && !data) return <p className="title">Loading...</p>;
+    setGraphqlPage(prev => prev + 1);
+  };
+
+  /* ---------- LOADING & ERROR ---------- */
+  if (loading && allEpisodes.length === 0) return <p className="title">Loading...</p>;
   if (error) return <p className="title">Error loading episodes</p>;
-  if (!data) return <p className="title">No data</p>;
+  if (!allEpisodes || allEpisodes.length === 0) return <p className="title">No episodes found</p>;
 
-  /*GROUP BY SEASON*/
-  const episodes = data.episodes.results;
-
-  const seasonsMap = episodes.reduce<Record<string, Episode[]>>((acc, ep) => {
+  /* ---------- GROUP EPISODES BY SEASON ---------- */
+  const seasonsMap = allEpisodes.reduce<Record<string, Episode[]>>((acc, ep) => {
     const season = ep.episode.slice(0, 3); // S01, S02...
     acc[season] = acc[season] || [];
     acc[season].push(ep);
@@ -84,38 +95,27 @@ export default function EpisodesPage() {
   }, {});
 
   const seasonKeys = Object.keys(seasonsMap).sort();
-  const totalPages = Math.ceil(seasonKeys.length / SEASONS_PER_PAGE);
 
-  const start = (currentPage - 1) * SEASONS_PER_PAGE;
-  const visibleSeasons = seasonKeys.slice(start, start + SEASONS_PER_PAGE);
-
+  /* ---------- UI ---------- */
   return (
     <main className="page-episodes">
       <div className="container">
-
         <h1 className="title">Episodes</h1>
 
-        {/* 🔙 BACK BUTTON */}
+        {/* BACK BUTTON */}
         <div className="back-button-wrapper">
           <Link href="/" className="view-episodes-btn">
             ← Back to Character List
           </Link>
         </div>
 
-        {/*SEASONS (2 PER PAGE)*/}
-        {visibleSeasons.map((season) => (
+        {/* SEASONS */}
+        {seasonKeys.map(season => (
           <section key={season} style={{ marginBottom: "60px" }}>
-            <h2 className="section-title">
-              Season {season.replace("S", "")}
-            </h2>
-
+            <h2 className="section-title">Season {season.replace("S", "")}</h2>
             <div className="episodes-grid">
-              {seasonsMap[season].map((ep) => (
-                <Link
-                  key={ep.id}
-                  href={`/episode/${ep.id}`}
-                  className="episode-card"
-                >
+              {seasonsMap[season].map(ep => (
+                <Link key={ep.id} href={`/episode/${ep.id}`} className="episode-card">
                   <div className="episode-code">{ep.episode}</div>
                   <div className="episode-name">{ep.name}</div>
                 </Link>
@@ -124,24 +124,12 @@ export default function EpisodesPage() {
           </section>
         ))}
 
-        {/*PAGINATION*/}
-        <div className="pagination">
-          {Array.from({ length: totalPages }).map((_, index) => {
-            const page = index + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`pagination-btn ${
-                  currentPage === page ? "active" : ""
-                }`}
-              >
-                {page}
-              </button>
-            );
-          })}
-        </div>
-
+        {/* LOAD MORE (FETCH NEXT GRAPHQL PAGE) */}
+        {data?.episodes.info.next && (
+          <button onClick={loadMoreEpisodes} className="load-more-btn">
+            Load More Episodes
+          </button>
+        )}
       </div>
     </main>
   );
