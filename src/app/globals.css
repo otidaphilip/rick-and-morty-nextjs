@@ -645,7 +645,36 @@
   box-shadow: 0 6px 18px rgba(34, 197, 94, 0.45);
 }
 
+/* ================= LOAD MORE BUTTON ================= */
+.load-more-btn {
+  display: block;
+  margin: 20px auto; /* center horizontally with spacing */
+  padding: 10px 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #4caf50; /* green button */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
 
+.load-more-btn:hover {
+  background-color: #45a049; /* slightly darker on hover */
+  transform: translateY(-2px); /* subtle lift effect */
+}
+
+.load-more-btn:active {
+  background-color: #3e8e41; /* darker on click */
+  transform: translateY(0); /* reset lift on click */
+}
+
+.load-more-btn:disabled {
+  background-color: #a5d6a7; /* lighter green when disabled */
+  cursor: not-allowed;
+  transform: none;
+}
 
 /* ============================= */
 /* ===== RESPONSIVE ===== */
