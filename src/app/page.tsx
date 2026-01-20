@@ -3,11 +3,15 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+/* ================= GRAPHQL QUERY ================= */
 const GET_CHARACTERS = gql`
-  query GetCharacters {
-    characters {
+  query GetCharacters($page: Int, $name: String) {
+    characters(page: $page, filter: { name: $name }) {
+      info {
+        next
+      }
       results {
         id
         name
@@ -20,6 +24,7 @@ const GET_CHARACTERS = gql`
   }
 `;
 
+/* ================= TYPES ================= */
 interface Character {
   id: string;
   name: string;
@@ -31,29 +36,57 @@ interface Character {
 
 interface CharactersData {
   characters: {
+    info: {
+      next: number | null;
+    };
     results: Character[];
   };
 }
 
+/* ================= COMPONENT ================= */
 export default function HomePage() {
-  const { data, loading, error } = useQuery<CharactersData>(GET_CHARACTERS);
-
+  /* ---------- UI STATE ---------- */
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [species, setSpecies] = useState("all");
   const [gender, setGender] = useState("all");
   const [status, setStatus] = useState("all");
 
-  if (loading) return <p>Loading...</p>;
+  /* ---------- APOLLO QUERY ---------- */
+  const { data, loading, error, fetchMore, refetch } =
+    useQuery<CharactersData>(GET_CHARACTERS, {
+      variables: {
+        page: 1,
+        name: "",
+      },
+      notifyOnNetworkStatusChange: true,
+    });
+
+  /* ---------- DEBOUNCE EFFECT ---------- */
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400); // debounce delay (ms)
+
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  /* ---------- TRIGGER SEARCH AFTER DEBOUNCE ---------- */
+  useEffect(() => {
+    refetch({
+      page: 1,
+      name: debouncedSearch || "",
+    });
+  }, [debouncedSearch, refetch]);
+
+  if (loading && !data) return <p>Loading...</p>;
   if (error) return <p>Error loading characters</p>;
-  if (!data) return <p>No data</p>;
 
-  const normalizedSearch = search.trim().toLowerCase();
+  const characters = data?.characters.results ?? [];
 
-  const filteredCharacters = data.characters.results.filter((char) => {
-    const matchesSearch = char.name
-      .toLowerCase()
-      .includes(normalizedSearch);
-
+  /* ---------- CLIENT-SIDE FILTERS ---------- */
+  const filteredCharacters = characters.filter((char) => {
     const matchesSpecies =
       species === "all" || char.species === species;
 
@@ -63,14 +96,42 @@ export default function HomePage() {
     const matchesStatus =
       status === "all" || char.status === status;
 
-    return (
-      matchesSearch &&
-      matchesSpecies &&
-      matchesGender &&
-      matchesStatus
-    );
+    return matchesSpecies && matchesGender && matchesStatus;
   });
 
+  /* ---------- LOAD MORE ---------- */
+  const loadMoreCharacters = () => {
+    if (!data?.characters.info.next) return;
+
+    fetchMore({
+      variables: {
+        page: data.characters.info.next,
+        name: debouncedSearch || "",
+      },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return prev;
+
+        const merged = [
+          ...prev.characters.results,
+          ...fetchMoreResult.characters.results,
+        ];
+
+        // Deduplicate by ID
+        const uniqueResults = Array.from(
+          new Map(merged.map((c) => [c.id, c])).values()
+        );
+
+        return {
+          characters: {
+            info: fetchMoreResult.characters.info,
+            results: uniqueResults,
+          },
+        };
+      },
+    });
+  };
+
+  /* ---------- UI ---------- */
   return (
     <main className="page-characters">
       <div className="container">
@@ -78,13 +139,11 @@ export default function HomePage() {
 
         {/* TOOLBAR */}
         <div className="characters-toolbar">
-          {/* LEFT SIDE */}
           <div className="toolbar-left">
             <Link href="/episodes" className="view-episodes-btn">
-              <center>View Episodes</center>
+              View Episodes
             </Link>
 
-            {/* FILTER DROPDOWNS */}
             <div className="filters">
               <select
                 value={species}
@@ -93,6 +152,8 @@ export default function HomePage() {
                 <option value="all">All Species</option>
                 <option value="Human">Human</option>
                 <option value="Alien">Alien</option>
+                <option value="Animal">Animal</option>
+                <option value="Mythological Creature">Mythological Creature</option>
               </select>
 
               <select
@@ -151,6 +212,16 @@ export default function HomePage() {
             </p>
           )}
         </div>
+
+        {/* LOAD MORE (DISABLED DURING SEARCH) */}
+        {!debouncedSearch && data?.characters.info.next && (
+          <button
+            onClick={loadMoreCharacters}
+            className="load-more-btn"
+          >
+            Load More Characters
+          </button>
+        )}
       </div>
     </main>
   );

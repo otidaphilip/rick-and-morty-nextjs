@@ -47,9 +47,7 @@ export default function EpisodesPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  /* =========================
-     FETCH ALL API PAGES
-  ========================= */
+  /*FETCH ALL API PAGES*/
   useEffect(() => {
     if (!data?.episodes.info.next) return;
 
@@ -75,9 +73,7 @@ export default function EpisodesPage() {
   if (error) return <p className="title">Error loading episodes</p>;
   if (!data) return <p className="title">No data</p>;
 
-  /* =========================
-     GROUP BY SEASON
-  ========================= */
+  /*GROUP BY SEASON*/
   const episodes = data.episodes.results;
 
   const seasonsMap = episodes.reduce<Record<string, Episode[]>>((acc, ep) => {
@@ -106,9 +102,7 @@ export default function EpisodesPage() {
           </Link>
         </div>
 
-        {/* =========================
-            SEASONS (2 PER PAGE)
-        ========================= */}
+        {/*SEASONS (2 PER PAGE)*/}
         {visibleSeasons.map((season) => (
           <section key={season} style={{ marginBottom: "60px" }}>
             <h2 className="section-title">
@@ -130,9 +124,7 @@ export default function EpisodesPage() {
           </section>
         ))}
 
-        {/* =========================
-            PAGINATION
-        ========================= */}
+        {/*PAGINATION*/}
         <div className="pagination">
           {Array.from({ length: totalPages }).map((_, index) => {
             const page = index + 1;

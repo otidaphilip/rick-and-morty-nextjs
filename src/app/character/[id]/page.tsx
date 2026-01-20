@@ -61,9 +61,7 @@ export default function CharacterPage() {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  /* =========================
-     INFINITE SCROLL
-  ========================= */
+  /* INFINITE SCROLL*/
   useEffect(() => {
     if (!data || !scrollContainerRef.current || !loadMoreRef.current) return;
 
@@ -104,9 +102,7 @@ export default function CharacterPage() {
           </Link>
         </div>
 
-        {/* =========================
-            CHARACTER CARD
-        ========================= */}
+        {/*CHARACTER CARD*/}
         <div className="character-card1">
           <Image
             src={char.image}
@@ -146,9 +142,7 @@ export default function CharacterPage() {
           </div>
         </div>
 
-        {/* =========================
-            EPISODES SECTION
-        ========================= */}
+        {/* EPISODES SECTION */}
         <section className="episodes-section">
           <h2 className="section-title">Episodes Appeared In</h2>
 
