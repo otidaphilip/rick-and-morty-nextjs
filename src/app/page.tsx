@@ -139,7 +139,7 @@ export default function HomePage() {
 
         {/* TOOLBAR */}
         <div className="characters-toolbar">
-          <div className="toolbar-left">
+          <div className="back-button-wrapper">
             <Link href="/episodes" className="view-episodes-btn">
               View Episodes
             </Link>
