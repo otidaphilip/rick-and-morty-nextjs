@@ -4,7 +4,7 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= GRAPHQL QUERY ================= */
 const GET_CHARACTERS = gql`
@@ -25,7 +25,6 @@ const GET_CHARACTERS = gql`
   }
 `;
 
-/* ================= TYPES ================= */
 interface Character {
   id: string;
   name: string;
@@ -44,12 +43,10 @@ interface CharactersData {
   };
 }
 
-/* ================= COMPONENT ================= */
 export default function HomePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  /* ---------- INIT SEARCH FROM URL ---------- */
   const initialSearch = searchParams.get("q") || "";
 
   const [search, setSearch] = useState(initialSearch);
@@ -60,14 +57,13 @@ export default function HomePage() {
   const [gender, setGender] = useState("all");
   const [status, setStatus] = useState("all");
 
-  /* ---------- APOLLO QUERY ---------- */
   const { data, loading, error, fetchMore, refetch } =
     useQuery<CharactersData>(GET_CHARACTERS, {
       variables: { page: 1, name: initialSearch },
       notifyOnNetworkStatusChange: true,
     });
 
-  /* ---------- DEBOUNCE SEARCH ---------- */
+  // debounce search
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
@@ -75,22 +71,20 @@ export default function HomePage() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  /* ---------- UPDATE URL & RESET PAGE ON SEARCH ---------- */
+  // update URL safely inside useEffect
   useEffect(() => {
     setPage(1);
-    // Update URL with ?q=keyword
-    const query = debouncedSearch ? `?q=${encodeURIComponent(debouncedSearch)}` : "";
-    router.replace(`/` + query, { scroll: false });
-
     refetch({ page: 1, name: debouncedSearch || "" });
+
+    // Update URL using router.push inside effect (safe for Vercel)
+    const query = debouncedSearch ? `?q=${encodeURIComponent(debouncedSearch)}` : "";
+    router.replace("/" + query, { scroll: false });
   }, [debouncedSearch, refetch, router]);
 
-  /* ---------- ERROR STATE ---------- */
   if (error) return <p>Error loading characters</p>;
 
   const characters = data?.characters.results ?? [];
 
-  /* ---------- CLIENT-SIDE FILTERS ---------- */
   const filteredCharacters = characters.filter((char) => {
     const matchesSpecies = species === "all" || char.species === species;
     const matchesGender = gender === "all" || char.gender === gender;
@@ -98,7 +92,6 @@ export default function HomePage() {
     return matchesSpecies && matchesGender && matchesStatus;
   });
 
-  /* ---------- LOAD MORE ---------- */
   const loadMoreCharacters = () => {
     if (!data || page >= data.characters.info.pages) return;
 
@@ -130,13 +123,11 @@ export default function HomePage() {
     setPage(nextPage);
   };
 
-  /* ---------- UI ---------- */
   return (
     <main className="page-characters">
       <div className="container">
         <h1 className="title">Rick and Morty Characters</h1>
 
-        {/* TOOLBAR */}
         <div className="characters-toolbar">
           <div className="back-button-wrapper">
             <Link href="/episodes" className="view-episodes-btn">
@@ -169,7 +160,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* SEARCH */}
           <input
             type="text"
             value={search}
@@ -179,25 +169,15 @@ export default function HomePage() {
           />
         </div>
 
-        {/* LOADING INDICATOR */}
         {loading && characters.length === 0 && (
           <p style={{ textAlign: "center" }}>Loading...</p>
         )}
 
-        {/* CHARACTER GRID */}
         <div className="character-grid">
           {filteredCharacters.length > 0 ? (
             filteredCharacters.map((char) => (
-              <Link
-                key={char.id}
-                href={`/character/${char.id}`}
-                className="character-card"
-              >
-                <img
-                  src={char.image}
-                  alt={char.name}
-                  className="character-image"
-                />
+              <Link key={char.id} href={`/character/${char.id}`} className="character-card">
+                <img src={char.image} alt={char.name} className="character-image" />
                 <div className="character-name">{char.name}</div>
               </Link>
             ))
@@ -210,13 +190,8 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* LOAD MORE */}
         {!debouncedSearch && page < (data?.characters.info.pages ?? 1) && (
-          <button
-            onClick={loadMoreCharacters}
-            className="load-more-btn"
-            disabled={loading}
-          >
+          <button onClick={loadMoreCharacters} className="load-more-btn" disabled={loading}>
             {loading ? "Loading..." : "Load More Characters"}
           </button>
         )}
