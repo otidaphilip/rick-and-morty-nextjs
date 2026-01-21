@@ -44,14 +44,12 @@ interface CharactersData {
   };
 }
 
-/* ================= COMPONENT ================= */
 export default function HomePage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
 
-  /* ---------- INIT SEARCH FROM URL ---------- */
-  const initialSearch = typeof searchParams.get === "function" ? searchParams.get("q") || "" : "";
-
+  /* ---------- UI STATE ---------- */
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [page, setPage] = useState(1);
@@ -61,11 +59,13 @@ export default function HomePage() {
   const [status, setStatus] = useState("all");
 
   /* ---------- APOLLO QUERY ---------- */
-  const { data, loading, error, fetchMore, refetch } =
-    useQuery<CharactersData>(GET_CHARACTERS, {
+  const { data, loading, error, fetchMore, refetch } = useQuery<CharactersData>(
+    GET_CHARACTERS,
+    {
       variables: { page: 1, name: initialSearch },
       notifyOnNetworkStatusChange: true,
-    });
+    }
+  );
 
   /* ---------- DEBOUNCE SEARCH ---------- */
   useEffect(() => {
@@ -76,21 +76,17 @@ export default function HomePage() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  /* ---------- UPDATE URL & RESET PAGE ON SEARCH ---------- */
+  /* ---------- UPDATE URL & RESET PAGE ---------- */
   useEffect(() => {
     setPage(1);
-
-    // Only update URL on client
-    if (typeof window !== "undefined") {
-      const query = debouncedSearch ? `?q=${encodeURIComponent(debouncedSearch)}` : "";
-      router.replace("/" + query, { scroll: false });
-    }
-
     refetch({ page: 1, name: debouncedSearch || "" });
+
+    // Update URL without refreshing the page
+    router.replace(`/?search=${debouncedSearch}`);
   }, [debouncedSearch, refetch, router]);
 
   /* ---------- ERROR STATE ---------- */
-  if (error) return <p>Error loading characters</p>;
+  if (error) return <p style={{ textAlign: "center" }}>Error loading characters</p>;
 
   const characters = data?.characters.results ?? [];
 
@@ -192,24 +188,14 @@ export default function HomePage() {
         <div className="character-grid">
           {filteredCharacters.length > 0 ? (
             filteredCharacters.map((char) => (
-              <Link
-                key={char.id}
-                href={`/character/${char.id}`}
-                className="character-card"
-              >
-                <img
-                  src={char.image}
-                  alt={char.name}
-                  className="character-image"
-                />
+              <Link key={char.id} href={`/character/${char.id}`} className="character-card">
+                <img src={char.image} alt={char.name} className="character-image" />
                 <div className="character-name">{char.name}</div>
               </Link>
             ))
           ) : (
             !loading && (
-              <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>
-                No characters found
-              </p>
+              <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>No characters found</p>
             )
           )}
         </div>
