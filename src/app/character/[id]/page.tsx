@@ -39,12 +39,12 @@ interface Character {
   status: string;
   species: string;
   image: string;
-  location: Location;
+  location: Location | null;
   episode: Episode[];
 }
 
 interface CharacterData {
-  character: Character;
+  character: Character | null;
 }
 
 const EPISODES_PER_LOAD = 6;
@@ -56,20 +56,22 @@ export default function CharacterPage() {
     variables: { id: params.id },
   });
 
+  const char = data?.character;
+
   const [visibleCount, setVisibleCount] = useState(EPISODES_PER_LOAD);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  /* INFINITE SCROLL*/
+  // --- Hooks always called, safe early exit inside
   useEffect(() => {
-    if (!data || !scrollContainerRef.current || !loadMoreRef.current) return;
+    if (!char || !scrollContainerRef.current || !loadMoreRef.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setVisibleCount((prev) =>
-            Math.min(prev + EPISODES_PER_LOAD, data.character.episode.length)
+            Math.min(prev + EPISODES_PER_LOAD, char.episode.length)
           );
         }
       },
@@ -80,29 +82,27 @@ export default function CharacterPage() {
     );
 
     observer.observe(loadMoreRef.current);
-
     return () => observer.disconnect();
-  }, [data]);
+  }, [char]); // dependency: char (can be null safely)
 
-  if (loading) return <p className="loading">Loading...</p>;
+  // --- Conditional UI rendering
   if (error) return <p className="error">Error loading character</p>;
-  if (!data) return <p>No data</p>;
+  if (loading && !data) return <p className="loading">Loading...</p>;
+  if (!char) return <p>No character found</p>;
 
-  const char = data.character;
   const visibleEpisodes = char.episode.slice(0, visibleCount);
 
   return (
     <main className="page-character-detail">
       <div className="container">
-
-        {/* 🔙 BACK BUTTON */}
+        {/* BACK BUTTON */}
         <div className="back-button-wrapper">
           <Link href="/" className="view-episodes-btn">
             ← Back to Character List
           </Link>
         </div>
 
-        {/*CHARACTER CARD*/}
+        {/* CHARACTER CARD */}
         <div className="character-card1">
           <Image
             src={char.image}
@@ -117,26 +117,22 @@ export default function CharacterPage() {
             <h1 className="character-name1">{char.name}</h1>
 
             <div className="character-meta">
-              <p>
-                <span className="label">Status:</span> {char.status}
-              </p>
-              <p>
-                <span className="label">Species:</span> {char.species}
-              </p>
+              <p><span className="label">Status:</span> {char.status}</p>
+              <p><span className="label">Species:</span> {char.species}</p>
               <p>
                 <span className="label">Last known location:</span>{" "}
-                {char.location?.name}
+                {char.location?.name ?? "Unknown"}
               </p>
             </div>
 
             <div className="seen-info">
               <p>
                 <span className="label">First seen:</span>{" "}
-                {char.episode[0]?.name}
+                {char.episode[0]?.name ?? "Unknown"}
               </p>
               <p>
                 <span className="label">Last seen:</span>{" "}
-                {char.episode[char.episode.length - 1]?.name}
+                {char.episode[char.episode.length - 1]?.name ?? "Unknown"}
               </p>
             </div>
           </div>
@@ -146,11 +142,7 @@ export default function CharacterPage() {
         <section className="episodes-section">
           <h2 className="section-title">Episodes Appeared In</h2>
 
-          {/* Scrollable container */}
-          <div
-            ref={scrollContainerRef}
-            className="episodes-scroll-container"
-          >
+          <div ref={scrollContainerRef} className="episodes-scroll-container">
             <div className="episodes-grid">
               {visibleEpisodes.map((ep, index) => (
                 <div key={ep.id} className="episode-card">
@@ -161,7 +153,6 @@ export default function CharacterPage() {
               ))}
             </div>
 
-            {/* Sentinel */}
             {visibleCount < char.episode.length && (
               <div ref={loadMoreRef} style={{ height: 1 }} />
             )}

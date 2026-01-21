@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+/* ================= GRAPHQL QUERY ================= */
 const GET_EPISODE = gql`
   query GetEpisode($id: ID!) {
     episode(id: $id) {
@@ -21,6 +22,7 @@ const GET_EPISODE = gql`
   }
 `;
 
+/* ================= TYPES ================= */
 interface Character {
   id: string;
   name: string;
@@ -35,9 +37,10 @@ interface Episode {
 }
 
 interface EpisodeData {
-  episode: Episode;
+  episode: Episode | null;
 }
 
+/* ================= COMPONENT ================= */
 export default function EpisodePage() {
   const params = useParams<{ id: string }>();
 
@@ -45,17 +48,28 @@ export default function EpisodePage() {
     variables: { id: params.id },
   });
 
-  if (loading) return <p className="title">Loading...</p>;
-  if (error) return <p className="title">Error loading episode</p>;
-  if (!data) return <p className="title">No data</p>;
+  /* ---------- ERROR ---------- */
+  if (error) {
+    return <p className="title">Error loading episode</p>;
+  }
 
+  /* ---------- INITIAL LOADING ---------- */
+  if (loading && !data) {
+    return <p className="title">Loading...</p>;
+  }
+
+  /* ---------- NO DATA (IMPORTANT FIX) ---------- */
+  if (!data || !data.episode) {
+    return <p className="title">Episode not found</p>;
+  }
+
+  /* ---------- SAFE: episode is GUARANTEED here ---------- */
   const ep = data.episode;
 
   return (
     <main className="page-episode-detail">
       <div className="container">
-
-        {/* 🔙 BACK BUTTON */}
+        {/* BACK BUTTON */}
         <div className="back-button-wrapper">
           <Link href="/episodes" className="view-episodes-btn">
             ← Back to Episode List
@@ -73,7 +87,7 @@ export default function EpisodePage() {
           </div>
         </div>
 
-        {/* CHARACTERS SECTION */}
+        {/* CHARACTERS */}
         <section className="episode-characters">
           <h2 className="section-title">Characters Appeared</h2>
 
@@ -90,7 +104,6 @@ export default function EpisodePage() {
                   height={140}
                   className="episode-character-image"
                 />
-
                 <span className="episode-character-name">
                   {char.name}
                 </span>
@@ -98,9 +111,7 @@ export default function EpisodePage() {
             ))}
           </div>
         </section>
-
       </div>
     </main>
   );
 }
-  
