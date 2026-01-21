@@ -4,7 +4,6 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 
 /* ================= GRAPHQL QUERY ================= */
 const GET_CHARACTERS = gql`
@@ -44,14 +43,11 @@ interface CharactersData {
   };
 }
 
+/* ================= COMPONENT ================= */
 export default function HomePage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialSearch = searchParams.get("search") || "";
-
   /* ---------- UI STATE ---------- */
-  const [search, setSearch] = useState(initialSearch);
-  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const [species, setSpecies] = useState("all");
@@ -59,13 +55,11 @@ export default function HomePage() {
   const [status, setStatus] = useState("all");
 
   /* ---------- APOLLO QUERY ---------- */
-  const { data, loading, error, fetchMore, refetch } = useQuery<CharactersData>(
-    GET_CHARACTERS,
-    {
-      variables: { page: 1, name: initialSearch },
+  const { data, loading, error, fetchMore, refetch } =
+    useQuery<CharactersData>(GET_CHARACTERS, {
+      variables: { page: 1, name: "" },
       notifyOnNetworkStatusChange: true,
-    }
-  );
+    });
 
   /* ---------- DEBOUNCE SEARCH ---------- */
   useEffect(() => {
@@ -76,18 +70,18 @@ export default function HomePage() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  /* ---------- UPDATE URL & RESET PAGE ---------- */
+  /* ---------- RESET PAGE ON SEARCH ---------- */
   useEffect(() => {
     setPage(1);
     refetch({ page: 1, name: debouncedSearch || "" });
-
-    // Update URL without refreshing the page
-    router.replace(`/?search=${debouncedSearch}`);
-  }, [debouncedSearch, refetch, router]);
+  }, [debouncedSearch, refetch]);
 
   /* ---------- ERROR STATE ---------- */
-  if (error) return <p style={{ textAlign: "center" }}>Error loading characters</p>;
+  if (error) {
+    return <p>Error loading characters</p>;
+  }
 
+  /* ---------- DATA ---------- */
   const characters = data?.characters.results ?? [];
 
   /* ---------- CLIENT-SIDE FILTERS ---------- */
@@ -188,28 +182,39 @@ export default function HomePage() {
         <div className="character-grid">
           {filteredCharacters.length > 0 ? (
             filteredCharacters.map((char) => (
-              <Link key={char.id} href={`/character/${char.id}`} className="character-card">
-                <img src={char.image} alt={char.name} className="character-image" />
+              <Link
+                key={char.id}
+                href={`/character/${char.id}`}
+                className="character-card"
+              >
+                <img
+                  src={char.image}
+                  alt={char.name}
+                  className="character-image"
+                />
                 <div className="character-name">{char.name}</div>
               </Link>
             ))
           ) : (
             !loading && (
-              <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>No characters found</p>
+              <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>
+                No characters found
+              </p>
             )
           )}
         </div>
 
         {/* LOAD MORE */}
-        {!debouncedSearch && page < (data?.characters.info.pages ?? 1) && (
-          <button
-            onClick={loadMoreCharacters}
-            className="load-more-btn"
-            disabled={loading}
-          >
-            {loading ? "Loading..." : "Load More Characters"}
-          </button>
-        )}
+        {!debouncedSearch &&
+          page < (data?.characters.info.pages ?? 1) && (
+            <button
+              onClick={loadMoreCharacters}
+              className="load-more-btn"
+              disabled={loading}
+            >
+              {loading ? "Loading..." : "Load More Characters"}
+            </button>
+          )}
       </div>
     </main>
   );
