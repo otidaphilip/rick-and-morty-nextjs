@@ -4,6 +4,7 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 /* ================= GRAPHQL QUERY ================= */
 const GET_CHARACTERS = gql`
@@ -45,9 +46,14 @@ interface CharactersData {
 
 /* ================= COMPONENT ================= */
 export default function HomePage() {
-  /* ---------- UI STATE ---------- */
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  /* ---------- INIT SEARCH FROM URL ---------- */
+  const initialSearch = searchParams.get("q") || "";
+
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [page, setPage] = useState(1);
 
   const [species, setSpecies] = useState("all");
@@ -57,7 +63,7 @@ export default function HomePage() {
   /* ---------- APOLLO QUERY ---------- */
   const { data, loading, error, fetchMore, refetch } =
     useQuery<CharactersData>(GET_CHARACTERS, {
-      variables: { page: 1, name: "" },
+      variables: { page: 1, name: initialSearch },
       notifyOnNetworkStatusChange: true,
     });
 
@@ -66,22 +72,22 @@ export default function HomePage() {
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
     }, 400);
-
     return () => clearTimeout(timeout);
   }, [search]);
 
-  /* ---------- RESET PAGE ON SEARCH ---------- */
+  /* ---------- UPDATE URL & RESET PAGE ON SEARCH ---------- */
   useEffect(() => {
     setPage(1);
+    // Update URL with ?q=keyword
+    const query = debouncedSearch ? `?q=${encodeURIComponent(debouncedSearch)}` : "";
+    router.replace(`/` + query, { scroll: false });
+
     refetch({ page: 1, name: debouncedSearch || "" });
-  }, [debouncedSearch, refetch]);
+  }, [debouncedSearch, refetch, router]);
 
   /* ---------- ERROR STATE ---------- */
-  if (error) {
-    return <p>Error loading characters</p>;
-  }
+  if (error) return <p>Error loading characters</p>;
 
-  /* ---------- DATA ---------- */
   const characters = data?.characters.results ?? [];
 
   /* ---------- CLIENT-SIDE FILTERS ---------- */
@@ -205,16 +211,15 @@ export default function HomePage() {
         </div>
 
         {/* LOAD MORE */}
-        {!debouncedSearch &&
-          page < (data?.characters.info.pages ?? 1) && (
-            <button
-              onClick={loadMoreCharacters}
-              className="load-more-btn"
-              disabled={loading}
-            >
-              {loading ? "Loading..." : "Load More Characters"}
-            </button>
-          )}
+        {!debouncedSearch && page < (data?.characters.info.pages ?? 1) && (
+          <button
+            onClick={loadMoreCharacters}
+            className="load-more-btn"
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Load More Characters"}
+          </button>
+        )}
       </div>
     </main>
   );
