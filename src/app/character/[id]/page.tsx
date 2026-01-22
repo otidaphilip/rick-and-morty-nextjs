@@ -5,7 +5,6 @@ import { useQuery } from "@apollo/client/react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 
 const GET_CHARACTER = gql`
   query GetCharacter($id: ID!) {
@@ -29,7 +28,7 @@ const GET_CHARACTER = gql`
 interface Episode {
   id: string;
   name: string;
-  episode: string; // S01E01
+  episode: string; // e.g. "S01E01"
 }
 
 interface Location {
@@ -49,49 +48,19 @@ interface CharacterData {
   character: Character | null;
 }
 
-const EPISODES_PER_LOAD = 6;
-
 export default function CharacterPage() {
   const params = useParams<{ id: string }>();
-
   const { data, loading, error } = useQuery<CharacterData>(GET_CHARACTER, {
     variables: { id: params.id },
   });
 
   const char = data?.character;
 
-  const [visibleCount, setVisibleCount] = useState(EPISODES_PER_LOAD);
-
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!char || !scrollContainerRef.current || !loadMoreRef.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisibleCount((prev) =>
-            Math.min(prev + EPISODES_PER_LOAD, char.episode.length)
-          );
-        }
-      },
-      {
-        root: scrollContainerRef.current,
-        threshold: 1,
-      }
-    );
-
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [char]);
-
   if (error) return <p className="error">Error loading character</p>;
   if (loading && !data) return <p className="loading">Loading...</p>;
   if (!char) return <p>No character found</p>;
 
   const episodes = char.episode ?? [];
-  const visibleEpisodes = episodes.slice(0, visibleCount);
 
   return (
     <main className="page-character-detail">
@@ -103,66 +72,69 @@ export default function CharacterPage() {
           </Link>
         </div>
 
-        {/* CHARACTER CARD */}
-        <div className="character-card1">
-          <Image
-            src={char.image}
-            alt={char.name ?? "Character"}
-            width={260}
-            height={260}
-            className="character-image1"
-            priority
-          />
+        {/* CHARACTER & EPISODES LAYOUT */}
+        <div className="character-layout">
+          {/* LEFT SIDE – CHARACTER DETAILS */}
+          <div className="character-left">
+            <div className="character-card1">
+              <Image
+                src={char.image}
+                alt={char.name ?? "Character"}
+                width={260}
+                height={260}
+                className="character-image1"
+                priority
+              />
 
-          <div className="character-info">
-            <h1 className="character-name1">{char.name ?? "Unknown Character"}</h1>
+              <div className="character-info">
+                <h1 className="character-name1">
+                  {char.name ?? "Unknown Character"}
+                </h1>
 
-            <div className="character-meta">
-              <p><span className="label">Status:</span> {char.status ?? "Unknown"}</p>
-              <p><span className="label">Species:</span> {char.species ?? "Unknown"}</p>
-              <p>
-                <span className="label">Last known location:</span>{" "}
-                {char.location?.name ?? "Unknown"}
-              </p>
+                <div className="character-meta">
+                  <p><span className="label">Status:</span> {char.status ?? "Unknown"}</p>
+                  <p><span className="label">Species:</span> {char.species ?? "Unknown"}</p>
+                  <p>
+                    <span className="label">Last known location:</span>{" "}
+                    {char.location?.name ?? "Unknown"}
+                  </p>
+                </div>
+
+                <div className="seen-info">
+                  <p>
+                    <span className="label">First seen:</span>{" "}
+                    {episodes[0]?.name ?? "Unknown"}
+                  </p>
+                  <p>
+                    <span className="label">Last seen:</span>{" "}
+                    {episodes[episodes.length - 1]?.name ?? "Unknown"}
+                  </p>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="seen-info">
-              <p>
-                <span className="label">First seen:</span>{" "}
-                {episodes[0]?.name ?? "Unknown"}
-              </p>
-              <p>
-                <span className="label">Last seen:</span>{" "}
-                {episodes[episodes.length - 1]?.name ?? "Unknown"}
-              </p>
-            </div>
+          {/* RIGHT SIDE – EPISODES */}
+          <div className="character-right">
+            <section className="episodes-section">
+              <h2 className="section-title">Episodes Appeared In</h2>
+
+              <div className="episodes-grid">
+                {episodes.map((ep) => {
+                  const seasonNumber =
+                    ep.episode?.match(/S(\d+)E\d+/)?.[1] ?? "??";
+
+                  return (
+                    <div key={ep.id} className="episode-card">
+                      <span className="episode-title">{ep.name ?? "Unknown Episode"}</span>
+                      <span className="episode-season">Season {seasonNumber} – {ep.episode}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </div>
         </div>
-
-        {/* EPISODES SECTION */}
-        <section className="episodes-section">
-          <h2 className="section-title">Episodes Appeared In</h2>
-
-          <div ref={scrollContainerRef} className="episodes-scroll-container">
-            <div className="episodes-grid">
-              {visibleEpisodes.map((ep) => {
-                const season = ep.episode?.slice(1, 3) ?? "??";
-
-                return (
-                  <div key={ep.id} className="episode-card">
-                    <span className="episode-title">
-                      Season {season} – {ep.episode}: {ep.name ?? "Unknown Episode"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {visibleCount < episodes.length && (
-              <div ref={loadMoreRef} style={{ height: 1 }} />
-            )}
-          </div>
-        </section>
       </div>
     </main>
   );
