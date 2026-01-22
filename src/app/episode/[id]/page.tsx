@@ -25,14 +25,14 @@ const GET_EPISODE = gql`
 /* ================= TYPES ================= */
 interface Character {
   id: string;
-  name: string;
-  image: string;
+  name?: string | null;
+  image?: string | null;
 }
 
 interface Episode {
-  name: string;
-  episode: string;
-  air_date: string;
+  name?: string | null;
+  episode?: string | null;
+  air_date?: string | null;
   characters: Character[];
 }
 
@@ -53,17 +53,16 @@ export default function EpisodePage() {
     return <p className="title">Error loading episode</p>;
   }
 
-  /* ---------- INITIAL LOADING ---------- */
+  /* ---------- LOADING ---------- */
   if (loading && !data) {
     return <p className="title">Loading...</p>;
   }
 
-  /* ---------- NO DATA (IMPORTANT FIX) ---------- */
+  /* ---------- NO DATA ---------- */
   if (!data || !data.episode) {
     return <p className="title">Episode not found</p>;
   }
 
-  /* ---------- SAFE: episode is GUARANTEED here ---------- */
   const ep = data.episode;
 
   return (
@@ -79,10 +78,16 @@ export default function EpisodePage() {
         {/* EPISODE HEADER */}
         <div className="episode-detail-card">
           <div className="episode-header">
-            <span className="episode-badge">{ep.episode}</span>
-            <h1 className="episode-title">{ep.name}</h1>
+            <span className="episode-badge">
+              {ep.episode ?? "Unknown Episode"}
+            </span>
+
+            <h1 className="episode-title">
+              {ep.name ?? "Untitled Episode"}
+            </h1>
+
             <p className="episode-airdate">
-              Air Date: {ep.air_date}
+              Air Date: {ep.air_date ?? "Unknown"}
             </p>
           </div>
         </div>
@@ -98,14 +103,18 @@ export default function EpisodePage() {
                 className="episode-character-card"
               >
                 <Image
-                  src={char.image}
-                  alt={char.name}
+                  src={
+                    char.image ??
+                    "/placeholder-character.png"
+                  }
+                  alt={char.name ?? "Unknown Character"}
                   width={140}
                   height={140}
                   className="episode-character-image"
                 />
+
                 <span className="episode-character-name">
-                  {char.name}
+                  {char.name ?? "Unknown Character"}
                 </span>
               </div>
             ))}

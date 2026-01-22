@@ -29,12 +29,12 @@ type Episode = {
 };
 
 type EpisodesData = {
-  episodes: {
-    info: {
-      next: number | null;
+  episodes?: {
+    info?: {
+      next?: number | null;
     };
-    results: Episode[];
-  };
+    results?: Episode[] | null;
+  } | null;
 };
 
 /* ================= COMPONENT ================= */
@@ -53,20 +53,22 @@ export default function EpisodesPage() {
 
   /* ---------- MERGE EPISODES SAFELY ---------- */
   useEffect(() => {
-    if (!data?.episodes.results) return;
+    const results = data?.episodes?.results ?? [];
+    if (results.length === 0) return;
 
     setAllEpisodes((prev) => {
-      const merged = [...prev, ...data.episodes.results];
+      const merged = [...prev, ...results];
       return Array.from(new Map(merged.map((e) => [e.id, e])).values());
     });
   }, [data]);
 
   /* ---------- LOAD MORE ---------- */
   const loadMoreEpisodes = () => {
-    if (!data?.episodes.info.next) return;
+    const nextPage = data?.episodes?.info?.next ?? null;
+    if (nextPage === null) return;
 
     fetchMore({
-      variables: { page: data.episodes.info.next },
+      variables: { page: nextPage },
     });
 
     setGraphqlPage((prev) => prev + 1);
@@ -90,8 +92,8 @@ export default function EpisodesPage() {
   /* ---------- GROUP BY SEASON ---------- */
   const seasonsMap = allEpisodes.reduce<Record<string, Episode[]>>(
     (acc, ep) => {
-      const season = ep.episode.slice(0, 3); // S01, S02...
-      acc[season] = acc[season] || [];
+      const season = ep.episode?.slice(0, 3) ?? "S00";
+      acc[season] = acc[season] ?? [];
       acc[season].push(ep);
       return acc;
     },
@@ -127,8 +129,8 @@ export default function EpisodesPage() {
                   href={`/episode/${ep.id}`}
                   className="episode-card"
                 >
-                  <div className="episode-code">{ep.episode}</div>
-                  <div className="episode-name">{ep.name}</div>
+                  <div className="episode-code">{ep.episode ?? "N/A"}</div>
+                  <div className="episode-name">{ep.name ?? "Untitled"}</div>
                 </Link>
               ))}
             </div>
@@ -136,7 +138,7 @@ export default function EpisodesPage() {
         ))}
 
         {/* LOAD MORE */}
-        {data?.episodes.info.next && (
+        {data?.episodes?.info?.next != null && (
           <button
             onClick={loadMoreEpisodes}
             className="load-more-btn"
