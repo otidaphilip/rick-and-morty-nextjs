@@ -50,20 +50,38 @@ interface CharacterData {
   character: Character | null;
 }
 
+/* ================= STATE COMPONENTS ================= */
+const LoadingState = () => (
+  <div className="title">
+    {/* Simple skeleton placeholder */}
+    <p>Loading character details...</p>
+  </div>
+);
+
+const ErrorState = () => (
+  <div className="title">
+    <p>Error loading character. Please try again.</p>
+  </div>
+);
+
+const EmptyState = ({ message }: { message?: string }) => (
+  <div className="title">
+    <p>{message ?? "No data available."}</p>
+  </div>
+);
+
 /* ================= COMPONENT ================= */
 export default function CharacterPage() {
   const params = useParams<{ id: string }>();
-
   const { data, loading, error } = useQuery<CharacterData>(GET_CHARACTER, {
     variables: { id: params.id },
   });
 
-  /* ---------- SAFE ACCESS ---------- */
-  const character = data?.character;
+  if (loading && !data) return <LoadingState />;
+  if (error) return <ErrorState />;
 
-  if (error) return <p className="title">Error loading character</p>;
-  if (loading && !data) return <p className="title">Loading...</p>;
-  if (!character) return <p className="title">No character found</p>;
+  const character = data?.character;
+  if (!character) return <EmptyState message="Character not found" />;
 
   const episodesAppeared = character.episode ?? [];
 
@@ -98,10 +116,12 @@ export default function CharacterPage() {
 
                 <div className="character-meta">
                   <p>
-                    <span className="label">Status:</span> {character.status ?? "Unknown"}
+                    <span className="label">Status:</span>{" "}
+                    {character.status ?? "Unknown"}
                   </p>
                   <p>
-                    <span className="label">Species:</span> {character.species ?? "Unknown"}
+                    <span className="label">Species:</span>{" "}
+                    {character.species ?? "Unknown"}
                   </p>
                   <p>
                     <span className="label">Last known location:</span>{" "}
@@ -128,21 +148,25 @@ export default function CharacterPage() {
             <section className="episodes-section">
               <h2 className="section-title">Episodes Appeared In</h2>
 
-              <div className="episodes-grid">
-                {episodesAppeared.map((ep) => {
-                  const episodeCode = ep.episode ?? "??";
-                  const seasonNumber = episodeCode.match(/S(\d+)E\d+/)?.[1] ?? "??";
+              {episodesAppeared.length === 0 ? (
+                <EmptyState message="This character has not appeared in any episodes." />
+              ) : (
+                <div className="episodes-grid">
+                  {episodesAppeared.map((ep) => {
+                    const episodeCode = ep.episode ?? "??";
+                    const seasonNumber = episodeCode.match(/S(\d+)E\d+/)?.[1] ?? "??";
 
-                  return (
-                    <div key={ep.id} className="episode-card">
-                      <span className="episode-title">{ep.name ?? "Unknown Episode"}</span>
-                      <span className="episode-season">
-                        Season {seasonNumber} – {episodeCode}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                    return (
+                      <div key={ep.id} className="episode-card">
+                        <span className="episode-title">{ep.name ?? "Unknown Episode"}</span>
+                        <span className="episode-season">
+                          Season {seasonNumber} – {episodeCode}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
         </div>

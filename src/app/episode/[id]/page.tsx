@@ -40,7 +40,55 @@ interface EpisodeData {
   episode: Episode | null;
 }
 
-/* ================= COMPONENT ================= */
+/* ================= LOADING COMPONENT ================= */
+function LoadingState() {
+  return (
+    <div className="loading-state">
+      <p className="title">Loading episode...</p>
+      <div className="skeleton-grid">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="skeleton-card"></div>
+        ))}
+      </div>
+      <style jsx>{`
+        .skeleton-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 20px;
+          margin-top: 20px;
+        }
+        .skeleton-card {
+          height: 140px;
+          border-radius: 12px;
+          background: linear-gradient(
+            90deg,
+            rgba(200, 200, 200, 0.2) 25%,
+            rgba(200, 200, 200, 0.35) 50%,
+            rgba(200, 200, 200, 0.2) 75%
+          );
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite linear;
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ================= ERROR COMPONENT ================= */
+function ErrorState({ message }: { message?: string }) {
+  return <p className="title error">{message ?? "Error loading episode"}</p>;
+}
+
+/* ================= EMPTY COMPONENT ================= */
+function EmptyState({ message }: { message?: string }) {
+  return <p className="title empty">{message ?? "No episode found"}</p>;
+}
+
+/* ================= MAIN COMPONENT ================= */
 export default function EpisodePage() {
   const params = useParams<{ id: string }>();
 
@@ -49,19 +97,13 @@ export default function EpisodePage() {
   });
 
   /* ---------- ERROR ---------- */
-  if (error) {
-    return <p className="title">Error loading episode</p>;
-  }
+  if (error) return <ErrorState message="Failed to load episode" />;
 
   /* ---------- LOADING ---------- */
-  if (loading && !data) {
-    return <p className="title">Loading...</p>;
-  }
+  if (loading && !data) return <LoadingState />;
 
   /* ---------- NO DATA ---------- */
-  if (!data || !data.episode) {
-    return <p className="title">Episode not found</p>;
-  }
+  if (!data || !data.episode) return <EmptyState />;
 
   /* ---------- DESTRUCTURE FIELDS ---------- */
   const { name, episode: epCode, air_date, characters } = data.episode;
@@ -89,22 +131,26 @@ export default function EpisodePage() {
         <section className="episode-characters">
           <h2 className="section-title">Characters Appeared</h2>
 
-          <div className="episode-character-grid">
-            {characters.map((character) => (
-              <div key={character.id} className="episode-character-card">
-                <Image
-                  src={character.image ?? "/placeholder-character.png"}
-                  alt={character.name ?? "Unknown Character"}
-                  width={140}
-                  height={140}
-                  className="episode-character-image"
-                />
-                <span className="episode-character-name">
-                  {character.name ?? "Unknown Character"}
-                </span>
-              </div>
-            ))}
-          </div>
+          {characters.length === 0 ? (
+            <EmptyState message="No characters appeared in this episode" />
+          ) : (
+            <div className="episode-character-grid">
+              {characters.map((character) => (
+                <div key={character.id} className="episode-character-card">
+                  <Image
+                    src={character.image ?? "/placeholder-character.png"}
+                    alt={character.name ?? "Unknown Character"}
+                    width={140}
+                    height={140}
+                    className="episode-character-image"
+                  />
+                  <span className="episode-character-name">
+                    {character.name ?? "Unknown Character"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>

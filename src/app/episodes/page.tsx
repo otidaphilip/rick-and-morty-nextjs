@@ -37,12 +37,38 @@ type EpisodesData = {
   } | null;
 };
 
+/* ================= LOADING / ERROR / EMPTY COMPONENTS ================= */
+const LoadingState = () => (
+  <div className="loading-state">
+    <p className="title">Loading episodes...</p>
+    <div className="episodes-grid">
+      {Array.from({ length: 8 }).map((_, idx) => (
+        <div key={idx} className="episode-card skeleton">
+          <div className="episode-code skeleton-box"></div>
+          <div className="episode-name skeleton-box"></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const ErrorState = ({ message }: { message?: string }) => (
+  <div className="error-state">
+    <p className="title">{message ?? "Error loading data"}</p>
+  </div>
+);
+
+const EmptyState = ({ message }: { message?: string }) => (
+  <div className="empty-state">
+    <p className="title">{message ?? "No data available"}</p>
+  </div>
+);
+
 /* ================= COMPONENT ================= */
 export default function EpisodesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
 
-  /* ---------- APOLLO QUERY ---------- */
   const { data, loading, error, fetchMore } = useQuery<EpisodesData>(
     GET_EPISODES,
     {
@@ -58,7 +84,7 @@ export default function EpisodesPage() {
 
     setAllEpisodes((prev) => {
       const merged = [...prev, ...results];
-      // Remove duplicates based on episode ID
+      // Remove duplicates by episode ID
       return Array.from(new Map(merged.map((e) => [e.id, e])).values());
     });
   }, [data]);
@@ -75,20 +101,11 @@ export default function EpisodesPage() {
     setCurrentPage(nextPageNumber);
   };
 
-  /* ---------- ERROR ---------- */
-  if (error) {
-    return <p className="title">Error loading episodes</p>;
-  }
-
-  /* ---------- LOADING (INITIAL ONLY) ---------- */
-  if (loading && allEpisodes.length === 0) {
-    return <p className="title">Loading...</p>;
-  }
-
-  /* ---------- NO DATA ---------- */
-  if (!loading && allEpisodes.length === 0) {
-    return <p className="title">No episodes found</p>;
-  }
+  /* ---------- HANDLE STATES ---------- */
+  if (error) return <ErrorState message="Failed to load episodes" />;
+  if (loading && allEpisodes.length === 0) return <LoadingState />;
+  if (!loading && allEpisodes.length === 0)
+    return <EmptyState message="No episodes found" />;
 
   /* ---------- GROUP BY SEASON ---------- */
   const seasonsMap = allEpisodes.reduce<Record<string, Episode[]>>(

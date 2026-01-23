@@ -44,7 +44,41 @@ interface CharactersData {
   };
 }
 
-/* ================= COMPONENT ================= */
+/* ================= REUSABLE COMPONENTS ================= */
+
+// Skeleton Loader for characters
+function LoadingSkeleton({ count = 10 }: { count?: number }) {
+  return (
+    <div className="character-grid">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="character-card skeleton-card">
+          <div className="skeleton-image" />
+          <div className="skeleton-text" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Error state
+function ErrorMessage({ message }: { message?: string }) {
+  return (
+    <p className="title" style={{ textAlign: "center", color: "#f87171" }}>
+      {message ?? "Something went wrong."}
+    </p>
+  );
+}
+
+// Empty state
+function EmptyState({ message }: { message?: string }) {
+  return (
+    <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#9ca3af" }}>
+      {message ?? "No results found."}
+    </p>
+  );
+}
+
+/* ================= MAIN COMPONENT ================= */
 export default function HomePage() {
   /* ---------- UI STATE ---------- */
   const [searchInput, setSearchInput] = useState("");
@@ -67,10 +101,7 @@ export default function HomePage() {
 
   /* ---------- DEBOUNCE SEARCH ---------- */
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-    }, 400);
-
+    const timeout = setTimeout(() => setDebouncedSearch(searchInput), 400);
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
@@ -81,38 +112,28 @@ export default function HomePage() {
   }, [debouncedSearch, refetch]);
 
   /* ---------- ERROR ---------- */
-  if (error) {
-    return <p className="title">Error loading characters</p>;
-  }
+  if (error) return <ErrorMessage message="Error loading characters." />;
 
   /* ---------- DATA ---------- */
-  const charactersList: Character[] =
-    data?.characters?.results ?? [];
+  const charactersList: Character[] = data?.characters?.results ?? [];
 
   /* ---------- CLIENT-SIDE FILTERING ---------- */
   const filteredCharacters = charactersList.filter((char) => {
     const matchesSpecies =
-      speciesFilter === "all" ||
-      char.species === speciesFilter;
+      speciesFilter === "all" || char.species === speciesFilter;
 
     const matchesGender =
-      genderFilter === "all" ||
-      char.gender === genderFilter;
+      genderFilter === "all" || char.gender === genderFilter;
 
     const matchesStatus =
-      statusFilter === "all" ||
-      char.status === statusFilter;
+      statusFilter === "all" || char.status === statusFilter;
 
     return matchesSpecies && matchesGender && matchesStatus;
   });
 
   /* ---------- LOAD MORE ---------- */
   const loadMoreCharacters = () => {
-    if (
-      !data ||
-      currentPage >= (data.characters.info.pages ?? 1)
-    )
-      return;
+    if (!data || currentPage >= (data.characters.info.pages ?? 1)) return;
 
     const nextPage = currentPage + 1;
 
@@ -205,15 +226,12 @@ export default function HomePage() {
           />
         </div>
 
-        {/* LOADING */}
-        {loading && charactersList.length === 0 && (
-          <p style={{ textAlign: "center" }}>Loading...</p>
-        )}
-
         {/* CHARACTER GRID */}
-        <div className="character-grid">
-          {filteredCharacters.length > 0 ? (
-            filteredCharacters.map((char) => (
+        {loading && charactersList.length === 0 ? (
+          <LoadingSkeleton count={10} />
+        ) : filteredCharacters.length > 0 ? (
+          <div className="character-grid">
+            {filteredCharacters.map((char) => (
               <Link
                 key={char.id}
                 href={`/character/${char.id}`}
@@ -226,30 +244,17 @@ export default function HomePage() {
                   height={170}
                   className="character-image"
                 />
-
-                <div className="character-name">
-                  {char.name ?? "Unknown"}
-                </div>
+                <div className="character-name">{char.name ?? "Unknown"}</div>
               </Link>
-            ))
-          ) : (
-            !loading && (
-              <p
-                style={{
-                  gridColumn: "1 / -1",
-                  textAlign: "center",
-                }}
-              >
-                No characters found
-              </p>
-            )
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState message="No characters found matching your filters." />
+        )}
 
         {/* LOAD MORE */}
         {debouncedSearch === "" &&
-          currentPage <
-            (data?.characters.info.pages ?? 1) && (
+          currentPage < (data?.characters.info.pages ?? 1) && (
             <button
               onClick={loadMoreCharacters}
               className="load-more-btn"
