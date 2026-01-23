@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+/* ================= GRAPHQL QUERY ================= */
 const GET_CHARACTER = gql`
   query GetCharacter($id: ID!) {
     character(id: $id) {
@@ -25,6 +26,7 @@ const GET_CHARACTER = gql`
   }
 `;
 
+/* ================= TYPES ================= */
 interface Episode {
   id: string;
   name: string;
@@ -32,35 +34,38 @@ interface Episode {
 }
 
 interface Location {
-  name: string;
+  name?: string | null;
 }
 
 interface Character {
-  name: string;
-  status: string;
-  species: string;
-  image: string;
-  location: Location | null;
-  episode: Episode[];
+  name?: string | null;
+  status?: string | null;
+  species?: string | null;
+  image?: string | null;
+  location?: Location | null;
+  episode?: Episode[] | null;
 }
 
 interface CharacterData {
   character: Character | null;
 }
 
+/* ================= COMPONENT ================= */
 export default function CharacterPage() {
   const params = useParams<{ id: string }>();
+
   const { data, loading, error } = useQuery<CharacterData>(GET_CHARACTER, {
     variables: { id: params.id },
   });
 
-  const char = data?.character;
+  /* ---------- SAFE ACCESS ---------- */
+  const character = data?.character;
 
-  if (error) return <p className="error">Error loading character</p>;
-  if (loading && !data) return <p className="loading">Loading...</p>;
-  if (!char) return <p>No character found</p>;
+  if (error) return <p className="title">Error loading character</p>;
+  if (loading && !data) return <p className="title">Loading...</p>;
+  if (!character) return <p className="title">No character found</p>;
 
-  const episodes = char.episode ?? [];
+  const episodesAppeared = character.episode ?? [];
 
   return (
     <main className="page-character-detail">
@@ -78,8 +83,8 @@ export default function CharacterPage() {
           <div className="character-left">
             <div className="character-card1">
               <Image
-                src={char.image}
-                alt={char.name ?? "Character"}
+                src={character.image ?? "/placeholder-character.png"}
+                alt={character.name ?? "Unknown Character"}
                 width={260}
                 height={260}
                 className="character-image1"
@@ -88,26 +93,30 @@ export default function CharacterPage() {
 
               <div className="character-info">
                 <h1 className="character-name1">
-                  {char.name ?? "Unknown Character"}
+                  {character.name ?? "Unknown Character"}
                 </h1>
 
                 <div className="character-meta">
-                  <p><span className="label">Status:</span> {char.status ?? "Unknown"}</p>
-                  <p><span className="label">Species:</span> {char.species ?? "Unknown"}</p>
+                  <p>
+                    <span className="label">Status:</span> {character.status ?? "Unknown"}
+                  </p>
+                  <p>
+                    <span className="label">Species:</span> {character.species ?? "Unknown"}
+                  </p>
                   <p>
                     <span className="label">Last known location:</span>{" "}
-                    {char.location?.name ?? "Unknown"}
+                    {character.location?.name ?? "Unknown"}
                   </p>
                 </div>
 
                 <div className="seen-info">
                   <p>
                     <span className="label">First seen:</span>{" "}
-                    {episodes[0]?.name ?? "Unknown"}
+                    {episodesAppeared[0]?.name ?? "Unknown"}
                   </p>
                   <p>
                     <span className="label">Last seen:</span>{" "}
-                    {episodes[episodes.length - 1]?.name ?? "Unknown"}
+                    {episodesAppeared[episodesAppeared.length - 1]?.name ?? "Unknown"}
                   </p>
                 </div>
               </div>
@@ -120,14 +129,16 @@ export default function CharacterPage() {
               <h2 className="section-title">Episodes Appeared In</h2>
 
               <div className="episodes-grid">
-                {episodes.map((ep) => {
-                  const seasonNumber =
-                    ep.episode?.match(/S(\d+)E\d+/)?.[1] ?? "??";
+                {episodesAppeared.map((ep) => {
+                  const episodeCode = ep.episode ?? "??";
+                  const seasonNumber = episodeCode.match(/S(\d+)E\d+/)?.[1] ?? "??";
 
                   return (
                     <div key={ep.id} className="episode-card">
                       <span className="episode-title">{ep.name ?? "Unknown Episode"}</span>
-                      <span className="episode-season">Season {seasonNumber} – {ep.episode}</span>
+                      <span className="episode-season">
+                        Season {seasonNumber} – {episodeCode}
+                      </span>
                     </div>
                   );
                 })}

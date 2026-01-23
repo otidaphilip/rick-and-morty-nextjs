@@ -63,7 +63,8 @@ export default function EpisodePage() {
     return <p className="title">Episode not found</p>;
   }
 
-  const ep = data.episode;
+  /* ---------- DESTRUCTURE FIELDS ---------- */
+  const { name, episode: epCode, air_date, characters } = data.episode;
 
   return (
     <main className="page-episode-detail">
@@ -78,17 +79,9 @@ export default function EpisodePage() {
         {/* EPISODE HEADER */}
         <div className="episode-detail-card">
           <div className="episode-header">
-            <span className="episode-badge">
-              {ep.episode ?? "Unknown Episode"}
-            </span>
-
-            <h1 className="episode-title">
-              {ep.name ?? "Untitled Episode"}
-            </h1>
-
-            <p className="episode-airdate">
-              Air Date: {ep.air_date ?? "Unknown"}
-            </p>
+            <span className="episode-badge">{epCode ?? "Unknown Episode"}</span>
+            <h1 className="episode-title">{name ?? "Untitled Episode"}</h1>
+            <p className="episode-airdate">Air Date: {air_date ?? "Unknown"}</p>
           </div>
         </div>
 
@@ -97,24 +90,17 @@ export default function EpisodePage() {
           <h2 className="section-title">Characters Appeared</h2>
 
           <div className="episode-character-grid">
-            {ep.characters.map((char) => (
-              <div
-                key={char.id}
-                className="episode-character-card"
-              >
+            {characters.map((character) => (
+              <div key={character.id} className="episode-character-card">
                 <Image
-                  src={
-                    char.image ??
-                    "/placeholder-character.png"
-                  }
-                  alt={char.name ?? "Unknown Character"}
+                  src={character.image ?? "/placeholder-character.png"}
+                  alt={character.name ?? "Unknown Character"}
                   width={140}
                   height={140}
                   className="episode-character-image"
                 />
-
                 <span className="episode-character-name">
-                  {char.name ?? "Unknown Character"}
+                  {character.name ?? "Unknown Character"}
                 </span>
               </div>
             ))}

@@ -3,6 +3,7 @@
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 /* ================= GRAPHQL QUERY ================= */
@@ -27,11 +28,11 @@ const GET_CHARACTERS = gql`
 /* ================= TYPES ================= */
 interface Character {
   id: string;
-  name: string;
-  image: string;
-  species: string;
-  gender: string;
-  status: string;
+  name?: string | null;
+  image?: string | null;
+  species?: string | null;
+  gender?: string | null;
+  status?: string | null;
 }
 
 interface CharactersData {
@@ -46,74 +47,90 @@ interface CharactersData {
 /* ================= COMPONENT ================= */
 export default function HomePage() {
   /* ---------- UI STATE ---------- */
-  const [search, setSearch] = useState<string>("");
-  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [species, setSpecies] = useState<string>("all");
-  const [gender, setGender] = useState<string>("all");
-  const [status, setStatus] = useState<string>("all");
+  const [speciesFilter, setSpeciesFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   /* ---------- APOLLO QUERY ---------- */
   const { data, loading, error, fetchMore, refetch } =
     useQuery<CharactersData>(GET_CHARACTERS, {
-      variables: { page: 1, name: "" },
+      variables: {
+        page: currentPage,
+        name: debouncedSearch ?? "",
+      },
       notifyOnNetworkStatusChange: true,
     });
 
   /* ---------- DEBOUNCE SEARCH ---------- */
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
+      setDebouncedSearch(searchInput);
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [search]);
+  }, [searchInput]);
 
   /* ---------- RESET PAGE ON SEARCH ---------- */
   useEffect(() => {
-    setPage(1);
+    setCurrentPage(1);
     refetch({ page: 1, name: debouncedSearch ?? "" });
   }, [debouncedSearch, refetch]);
 
-  /* ---------- ERROR STATE ---------- */
+  /* ---------- ERROR ---------- */
   if (error) {
-    return <p>Error loading characters</p>;
+    return <p className="title">Error loading characters</p>;
   }
 
   /* ---------- DATA ---------- */
-  const characters: Character[] = data?.characters.results ?? [];
+  const charactersList: Character[] =
+    data?.characters?.results ?? [];
 
-  /* ---------- CLIENT-SIDE FILTERS ---------- */
-  const filteredCharacters = characters.filter((char) => {
+  /* ---------- CLIENT-SIDE FILTERING ---------- */
+  const filteredCharacters = charactersList.filter((char) => {
     const matchesSpecies =
-      species === "all" || char.species === species;
+      speciesFilter === "all" ||
+      char.species === speciesFilter;
+
     const matchesGender =
-      gender === "all" || char.gender === gender;
+      genderFilter === "all" ||
+      char.gender === genderFilter;
+
     const matchesStatus =
-      status === "all" || char.status === status;
+      statusFilter === "all" ||
+      char.status === statusFilter;
 
     return matchesSpecies && matchesGender && matchesStatus;
   });
 
   /* ---------- LOAD MORE ---------- */
   const loadMoreCharacters = () => {
-    if (!data || page >= (data?.characters.info.pages ?? 1)) return;
+    if (
+      !data ||
+      currentPage >= (data.characters.info.pages ?? 1)
+    )
+      return;
 
-    const nextPage = page + 1;
+    const nextPage = currentPage + 1;
 
     fetchMore({
-      variables: { page: nextPage, name: debouncedSearch ?? "" },
-      updateQuery: (prev, { fetchMoreResult }) => {
-        if (!fetchMoreResult) return prev;
+      variables: {
+        page: nextPage,
+        name: debouncedSearch ?? "",
+      },
+      updateQuery: (previousResult, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return previousResult;
 
-        const merged = [
-          ...prev.characters.results,
+        const mergedResults = [
+          ...previousResult.characters.results,
           ...fetchMoreResult.characters.results,
         ];
 
         const uniqueResults = Array.from(
-          new Map(merged.map((c) => [c.id, c])).values()
+          new Map(mergedResults.map((c) => [c.id, c])).values()
         );
 
         return {
@@ -125,7 +142,7 @@ export default function HomePage() {
       },
     });
 
-    setPage(nextPage);
+    setCurrentPage(nextPage);
   };
 
   /* ---------- UI ---------- */
@@ -138,13 +155,13 @@ export default function HomePage() {
         <div className="characters-toolbar">
           <div className="back-button-wrapper">
             <Link href="/episodes" className="view-episodes-btn">
-              View Episodes
+              View Episodes →
             </Link>
 
             <div className="filters">
               <select
-                value={species}
-                onChange={(e) => setSpecies(e.target.value)}
+                value={speciesFilter}
+                onChange={(e) => setSpeciesFilter(e.target.value)}
               >
                 <option value="all">All Species</option>
                 <option value="Human">Human</option>
@@ -156,8 +173,8 @@ export default function HomePage() {
               </select>
 
               <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
               >
                 <option value="all">All Genders</option>
                 <option value="Male">Male</option>
@@ -167,8 +184,8 @@ export default function HomePage() {
               </select>
 
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="all">All Status</option>
                 <option value="Alive">Alive</option>
@@ -181,15 +198,15 @@ export default function HomePage() {
           {/* SEARCH */}
           <input
             type="text"
-            value={search}
+            value={searchInput}
             placeholder="🔍 Search character..."
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="search-input"
           />
         </div>
 
-        {/* LOADING INDICATOR */}
-        {loading && characters.length === 0 && (
+        {/* LOADING */}
+        {loading && charactersList.length === 0 && (
           <p style={{ textAlign: "center" }}>Loading...</p>
         )}
 
@@ -202,12 +219,17 @@ export default function HomePage() {
                 href={`/character/${char.id}`}
                 className="character-card"
               >
-                <img
-                  src={char.image}
-                  alt={char.name}
+                <Image
+                  src={char.image ?? "/placeholder-character.png"}
+                  alt={char.name ?? "Unknown character"}
+                  width={170}
+                  height={170}
                   className="character-image"
                 />
-                <div className="character-name">{char.name}</div>
+
+                <div className="character-name">
+                  {char.name ?? "Unknown"}
+                </div>
               </Link>
             ))
           ) : (
@@ -225,8 +247,9 @@ export default function HomePage() {
         </div>
 
         {/* LOAD MORE */}
-        {(debouncedSearch ?? "") === "" &&
-          page < (data?.characters.info.pages ?? 1) && (
+        {debouncedSearch === "" &&
+          currentPage <
+            (data?.characters.info.pages ?? 1) && (
             <button
               onClick={loadMoreCharacters}
               className="load-more-btn"

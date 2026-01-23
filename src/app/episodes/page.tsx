@@ -24,8 +24,8 @@ const GET_EPISODES = gql`
 /* ================= TYPES ================= */
 type Episode = {
   id: string;
-  name: string;
-  episode: string;
+  name?: string | null;
+  episode?: string | null;
 };
 
 type EpisodesData = {
@@ -39,14 +39,14 @@ type EpisodesData = {
 
 /* ================= COMPONENT ================= */
 export default function EpisodesPage() {
-  const [graphqlPage, setGraphqlPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>([]);
 
   /* ---------- APOLLO QUERY ---------- */
   const { data, loading, error, fetchMore } = useQuery<EpisodesData>(
     GET_EPISODES,
     {
-      variables: { page: graphqlPage },
+      variables: { page: currentPage },
       notifyOnNetworkStatusChange: true,
     }
   );
@@ -58,20 +58,21 @@ export default function EpisodesPage() {
 
     setAllEpisodes((prev) => {
       const merged = [...prev, ...results];
+      // Remove duplicates based on episode ID
       return Array.from(new Map(merged.map((e) => [e.id, e])).values());
     });
   }, [data]);
 
   /* ---------- LOAD MORE ---------- */
   const loadMoreEpisodes = () => {
-    const nextPage = data?.episodes?.info?.next ?? null;
-    if (nextPage === null) return;
+    const nextPageNumber = data?.episodes?.info?.next ?? null;
+    if (nextPageNumber == null) return;
 
     fetchMore({
-      variables: { page: nextPage },
+      variables: { page: nextPageNumber },
     });
 
-    setGraphqlPage((prev) => prev + 1);
+    setCurrentPage(nextPageNumber);
   };
 
   /* ---------- ERROR ---------- */

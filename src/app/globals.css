@@ -276,7 +276,7 @@
 
   .character-left {
     position: static;
-    width: 100%;
+    width: 80%;
     margin-bottom: 30px;
   }
 
@@ -284,6 +284,7 @@
     max-height: none;
     overflow: visible;
     padding-right: 0;
+    
   }
 }
 
@@ -514,7 +515,7 @@
 
 @media (max-width: 480px) {
   .character-grid, .episode-character-grid { grid-template-columns: 1fr; }
-  .search-input, .view-episodes-btn, .load-more-btn { width: 100%; }
+  .search-input, .view-episodes-btn, .load-more-btn { width: 50%; }
   .filters { justify-content: flex-start; }
 }
 
