@@ -5,6 +5,7 @@ import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= GRAPHQL QUERY ================= */
 const GET_CHARACTERS = gql`
@@ -46,7 +47,6 @@ interface CharactersData {
 
 /* ================= REUSABLE COMPONENTS ================= */
 
-// Skeleton Loader for characters
 function LoadingSkeleton({ count = 10 }: { count?: number }) {
   return (
     <div className="character-grid">
@@ -60,7 +60,6 @@ function LoadingSkeleton({ count = 10 }: { count?: number }) {
   );
 }
 
-// Error state
 function ErrorMessage({ message }: { message?: string }) {
   return (
     <p className="title" style={{ textAlign: "center", color: "#f87171" }}>
@@ -69,7 +68,6 @@ function ErrorMessage({ message }: { message?: string }) {
   );
 }
 
-// Empty state
 function EmptyState({ message }: { message?: string }) {
   return (
     <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "#9ca3af" }}>
@@ -80,9 +78,15 @@ function EmptyState({ message }: { message?: string }) {
 
 /* ================= MAIN COMPONENT ================= */
 export default function HomePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  /* ---------- URL SEARCH ---------- */
+  const urlSearch = searchParams.get("name") ?? "";
+
   /* ---------- UI STATE ---------- */
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(urlSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch);
   const [currentPage, setCurrentPage] = useState(1);
 
   const [speciesFilter, setSpeciesFilter] = useState("all");
@@ -94,21 +98,34 @@ export default function HomePage() {
     useQuery<CharactersData>(GET_CHARACTERS, {
       variables: {
         page: currentPage,
-        name: debouncedSearch ?? "",
+        name: debouncedSearch,
       },
       notifyOnNetworkStatusChange: true,
     });
 
-  /* ---------- DEBOUNCE SEARCH ---------- */
+  /* ---------- DEBOUNCE + URL SYNC ---------- */
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearch(searchInput), 400);
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (searchInput) {
+        params.set("name", searchInput);
+      } else {
+        params.delete("name");
+      }
+
+      router.push(`?${params.toString()}`, { scroll: false });
+    }, 400);
+
     return () => clearTimeout(timeout);
-  }, [searchInput]);
+  }, [searchInput, router, searchParams]);
 
   /* ---------- RESET PAGE ON SEARCH ---------- */
   useEffect(() => {
     setCurrentPage(1);
-    refetch({ page: 1, name: debouncedSearch ?? "" });
+    refetch({ page: 1, name: debouncedSearch });
   }, [debouncedSearch, refetch]);
 
   /* ---------- ERROR ---------- */
@@ -121,10 +138,8 @@ export default function HomePage() {
   const filteredCharacters = charactersList.filter((char) => {
     const matchesSpecies =
       speciesFilter === "all" || char.species === speciesFilter;
-
     const matchesGender =
       genderFilter === "all" || char.gender === genderFilter;
-
     const matchesStatus =
       statusFilter === "all" || char.status === statusFilter;
 
@@ -133,31 +148,31 @@ export default function HomePage() {
 
   /* ---------- LOAD MORE ---------- */
   const loadMoreCharacters = () => {
-    if (!data || currentPage >= (data.characters.info.pages ?? 1)) return;
+    if (!data || currentPage >= data.characters.info.pages) return;
 
     const nextPage = currentPage + 1;
 
     fetchMore({
       variables: {
         page: nextPage,
-        name: debouncedSearch ?? "",
+        name: debouncedSearch,
       },
-      updateQuery: (previousResult, { fetchMoreResult }) => {
-        if (!fetchMoreResult) return previousResult;
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return prev;
 
-        const mergedResults = [
-          ...previousResult.characters.results,
+        const merged = [
+          ...prev.characters.results,
           ...fetchMoreResult.characters.results,
         ];
 
-        const uniqueResults = Array.from(
-          new Map(mergedResults.map((c) => [c.id, c])).values()
+        const unique = Array.from(
+          new Map(merged.map((c) => [c.id, c])).values()
         );
 
         return {
           characters: {
             info: fetchMoreResult.characters.info,
-            results: uniqueResults,
+            results: unique,
           },
         };
       },
@@ -228,7 +243,7 @@ export default function HomePage() {
 
         {/* CHARACTER GRID */}
         {loading && charactersList.length === 0 ? (
-          <LoadingSkeleton count={10} />
+          <LoadingSkeleton />
         ) : filteredCharacters.length > 0 ? (
           <div className="character-grid">
             {filteredCharacters.map((char) => (
