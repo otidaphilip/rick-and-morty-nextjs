@@ -11,9 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 const GET_CHARACTERS = gql`
   query GetCharacters($page: Int, $name: String) {
     characters(page: $page, filter: { name: $name }) {
-      info {
-        pages
-      }
+      info { pages }
       results {
         id
         name
@@ -85,17 +83,20 @@ function HomePageContent() {
   const [debouncedSearch, setDebouncedSearch] = useState(urlSearch);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // ✅ FILTER STATES (RESTORED)
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data, loading, error, fetchMore, refetch } =
-    useQuery<CharactersData>(GET_CHARACTERS, {
+  const { data, loading, error, fetchMore } = useQuery<CharactersData>(
+    GET_CHARACTERS,
+    {
       variables: { page: currentPage, name: debouncedSearch },
       notifyOnNetworkStatusChange: true,
-    });
+    }
+  );
 
-  /* DEBOUNCE + URL UPDATE */
+  /* 🔍 DEBOUNCE SEARCH + URL UPDATE */
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearch(searchInput);
@@ -104,21 +105,17 @@ function HomePageContent() {
       searchInput ? params.set("name", searchInput) : params.delete("name");
 
       router.replace(`?${params.toString()}`, { scroll: false });
+      setCurrentPage(1);
     }, 400);
 
     return () => clearTimeout(timeout);
   }, [searchInput, router, searchParams]);
 
-  /* RESET PAGE ON SEARCH */
-  useEffect(() => {
-    setCurrentPage(1);
-    refetch({ page: 1, name: debouncedSearch });
-  }, [debouncedSearch, refetch]);
-
   if (error) return <ErrorMessage message="Error loading characters." />;
 
   const charactersList: Character[] = data?.characters?.results ?? [];
 
+  /* ✅ FILTER LOGIC (RESTORED) */
   const filteredCharacters = charactersList.filter((char) => {
     return (
       (speciesFilter === "all" || char.species === speciesFilter) &&
@@ -127,6 +124,7 @@ function HomePageContent() {
     );
   });
 
+  /* 📄 LOAD MORE */
   const loadMoreCharacters = () => {
     if (!data || currentPage >= data.characters.info.pages) return;
 
@@ -157,11 +155,40 @@ function HomePageContent() {
       <div className="container">
         <h1 className="title">Rick and Morty Characters</h1>
 
+        {/* 🔧 TOOLBAR WITH FILTERS RESTORED */}
         <div className="characters-toolbar">
-          <Link href="/episodes" className="view-episodes-btn">
-            View Episodes →
-          </Link>
+          <div className="back-button-wrapper">
+            <Link href="/episodes" className="view-episodes-btn">
+              View Episodes →
+            </Link>
 
+            <div className="filters">
+              <select value={speciesFilter} onChange={(e) => setSpeciesFilter(e.target.value)}>
+                <option value="all">All Species</option>
+                <option value="Human">Human</option>
+                <option value="Alien">Alien</option>
+                <option value="Animal">Animal</option>
+                <option value="Mythological Creature">Mythological Creature</option>
+              </select>
+
+              <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}>
+                <option value="all">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Genderless">Genderless</option>
+                <option value="unknown">Unknown</option>
+              </select>
+
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="all">All Status</option>
+                <option value="Alive">Alive</option>
+                <option value="Dead">Dead</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </div>
+          </div>
+
+          {/* SEARCH */}
           <input
             type="text"
             value={searchInput}
@@ -171,6 +198,7 @@ function HomePageContent() {
           />
         </div>
 
+        {/* CHARACTER GRID */}
         {loading && charactersList.length === 0 ? (
           <LoadingSkeleton />
         ) : filteredCharacters.length > 0 ? (
@@ -192,6 +220,7 @@ function HomePageContent() {
           <EmptyState message="No characters found matching your filters." />
         )}
 
+        {/* LOAD MORE */}
         {debouncedSearch === "" &&
           currentPage < (data?.characters.info.pages ?? 1) && (
             <button onClick={loadMoreCharacters} className="load-more-btn" disabled={loading}>
