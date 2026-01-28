@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function CharacterFilters() {
   const router = useRouter();
@@ -12,12 +13,7 @@ export default function CharacterFilters() {
   const [gender, setGender] = useState(searchParams.get("gender") || "all");
   const [status, setStatus] = useState(searchParams.get("status") || "all");
 
-  const updateURL = (newValues: {
-    name?: string;
-    species?: string;
-    gender?: string;
-    status?: string;
-  }) => {
+  const updateURL = (newValues: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(newValues).forEach(([key, value]) => {
@@ -25,12 +21,18 @@ export default function CharacterFilters() {
       else params.set(key, value);
     });
 
+    params.delete("page"); // reset to page 1 when filtering
     router.push(`?${params.toString()}`);
   };
 
   return (
     <div className="characters-toolbar">
       <div className="back-button-wrapper">
+        {/* ✅ VIEW EPISODES BUTTON RESTORED */}
+        <Link href="/episodes" className="view-episodes-btn">
+          View Episodes →
+        </Link>
+
         <div className="filters">
           <select
             value={species}
@@ -75,6 +77,7 @@ export default function CharacterFilters() {
         </div>
       </div>
 
+      {/* SEARCH */}
       <input
         type="text"
         value={name}
