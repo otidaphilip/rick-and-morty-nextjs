@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import CharacterFilters from "@/components/CharacterFilters";
 
-/* ================= FETCH FUNCTION (SSR) ================= */
+/* ================= SERVER FETCH ================= */
 async function getCharacters(page: number, name: string) {
   const res = await fetch("https://rickandmortyapi.com/graphql", {
     method: "POST",
@@ -25,14 +25,14 @@ async function getCharacters(page: number, name: string) {
       `,
       variables: { page, name },
     }),
-    cache: "no-store",
+    cache: "no-store", // 🔥 Forces SSR
   });
 
   const json = await res.json();
   return json.data.characters;
 }
 
-/* ================= SERVER PAGE ================= */
+/* ================= SSR PAGE ================= */
 export default async function HomePage({ searchParams }: any) {
   const currentPage = Number(searchParams.page) || 1;
   const searchName = searchParams.name || "";
@@ -55,7 +55,7 @@ export default async function HomePage({ searchParams }: any) {
       <div className="container">
         <h1 className="title">Rick and Morty Characters (SSR)</h1>
 
-        {/* CLIENT FILTERS */}
+        {/* CLIENT FILTER UI */}
         <CharacterFilters />
 
         {/* CHARACTER GRID */}
@@ -74,14 +74,14 @@ export default async function HomePage({ searchParams }: any) {
           ))}
         </div>
 
-        {/* ✅ FIXED LOAD MORE BUTTON */}
+        {/* ✅ SSR LOAD MORE PAGINATION */}
         {currentPage < charactersData.info.pages && (
           <div style={{ textAlign: "center", marginTop: "30px" }}>
             <Link
               href={`?page=${currentPage + 1}&name=${searchName}&species=${speciesFilter}&gender=${genderFilter}&status=${statusFilter}`}
               className="load-more-btn"
             >
-              Load More Characters
+              Load More Characters →
             </Link>
           </div>
         )}

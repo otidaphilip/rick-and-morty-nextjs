@@ -21,14 +21,16 @@ export default function CharacterFilters() {
       else params.set(key, value);
     });
 
-    params.delete("page"); // reset to page 1 when filtering
+    // Reset pagination when filters/search change
+    params.delete("page");
+
     router.push(`?${params.toString()}`);
   };
 
   return (
     <div className="characters-toolbar">
       <div className="back-button-wrapper">
-        {/* ✅ VIEW EPISODES BUTTON RESTORED */}
+        {/* ✅ VIEW EPISODES BUTTON */}
         <Link href="/episodes" className="view-episodes-btn">
           View Episodes →
         </Link>
