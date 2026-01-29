@@ -63,7 +63,7 @@ export default async function HomePage({ searchParams }: { searchParams: any }) 
               href={`?page=${currentPage + 1}&name=${searchName}&species=${speciesFilter}&gender=${genderFilter}&status=${statusFilter}`}
               className="load-more-btn"
             >
-              Load More Characters
+              Load More Characters →
             </Link>
           </div>
         )}
