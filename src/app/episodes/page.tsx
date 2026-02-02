@@ -10,15 +10,34 @@ const QUERY = `
 `;
 
 async function getEpisodes(page: number) {
-  const res = await fetch("https://rickandmortyapi.com/graphql", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query: QUERY, variables: { page } }),
-    cache: "no-store",
-  });
+  try {
+    const res = await fetch("https://rickandmortyapi.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: QUERY,
+        variables: { page },
+      }),
+      // 👇 Important for SSR reliability
+      cache: "no-store",
+      next: { revalidate: 0 },
+    });
 
-  const json = await res.json();
-  return json.data.episodes;
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status}`);
+    }
+
+    const json = await res.json();
+    return json.data.episodes;
+  } catch (error) {
+    console.error("SSR Fetch Episodes Error:", error);
+    return {
+      info: { next: null },
+      results: [],
+    };
+  }
 }
 
 export default async function EpisodesPage() {
