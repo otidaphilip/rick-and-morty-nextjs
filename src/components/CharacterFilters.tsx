@@ -13,7 +13,7 @@ export default function CharacterFilters() {
   const [gender, setGender] = useState("all");
   const [status, setStatus] = useState("all");
 
-  // Sync state with URL when page loads or changes
+  // Sync local state with URL
   useEffect(() => {
     setName(searchParams.get("name") || "");
     setSpecies(searchParams.get("species") || "all");
@@ -29,9 +29,18 @@ export default function CharacterFilters() {
       else params.set(key, value);
     });
 
-    params.delete("page"); // Reset pagination when filters change
+    params.delete("page"); // reset pagination when filters change
     router.push(`?${params.toString()}`);
   };
+
+  // Debounced search
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      updateURL({ name });
+    }, 400);
+
+    return () => clearTimeout(delay);
+  }, [name]);
 
   return (
     <div className="characters-toolbar">
@@ -41,15 +50,25 @@ export default function CharacterFilters() {
         </Link>
 
         <div className="filters">
-          <select value={species} onChange={(e) => updateURL({ species: e.target.value })}>
+          <select
+            value={species}
+            onChange={(e) => {
+              setSpecies(e.target.value);
+              updateURL({ species: e.target.value });
+            }}
+          >
             <option value="all">All Species</option>
             <option value="Human">Human</option>
             <option value="Alien">Alien</option>
-            <option value="Animal">Animal</option>
-            <option value="Mythological Creature">Mythological Creature</option>
           </select>
 
-          <select value={gender} onChange={(e) => updateURL({ gender: e.target.value })}>
+          <select
+            value={gender}
+            onChange={(e) => {
+              setGender(e.target.value);
+              updateURL({ gender: e.target.value });
+            }}
+          >
             <option value="all">All Genders</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
@@ -57,7 +76,13 @@ export default function CharacterFilters() {
             <option value="unknown">Unknown</option>
           </select>
 
-          <select value={status} onChange={(e) => updateURL({ status: e.target.value })}>
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              updateURL({ status: e.target.value });
+            }}
+          >
             <option value="all">All Status</option>
             <option value="Alive">Alive</option>
             <option value="Dead">Dead</option>
@@ -66,16 +91,12 @@ export default function CharacterFilters() {
         </div>
       </div>
 
-      {/* SEARCH */}
       <input
         type="text"
         value={name}
         placeholder="🔍 Search character..."
         className="search-input"
         onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") updateURL({ name });
-        }}
       />
     </div>
   );

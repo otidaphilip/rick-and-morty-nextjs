@@ -24,12 +24,13 @@ async function getCharacters(page: number, name: string) {
   return json.data.characters;
 }
 
-export default async function HomePage({ searchParams }: { searchParams: any }) {
-  const currentPage = Number(searchParams.page ?? "1");
-  const searchName = searchParams.name ?? "";
-  const speciesFilter = searchParams.species ?? "all";
-  const genderFilter = searchParams.gender ?? "all";
-  const statusFilter = searchParams.status ?? "all";
+export default async function HomePage({ searchParams }: { searchParams: Promise<{name:string, species:string, gender:string, status:string, page:string}> }) {
+  const params = await searchParams;
+  const currentPage = Number(params.page ?? "1");
+  const searchName = params.name ?? "";
+  const speciesFilter = params.species ?? "all";
+  const genderFilter = params.gender ?? "all";
+  const statusFilter = params.status ?? "all";
 
   const charactersData = await getCharacters(currentPage, searchName);
 
