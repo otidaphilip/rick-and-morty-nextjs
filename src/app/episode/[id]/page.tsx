@@ -1,28 +1,10 @@
 "use client";
 
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-/* ================= GRAPHQL QUERY ================= */
-const GET_EPISODE = gql`
-  query GetEpisode($id: ID!) {
-    episode(id: $id) {
-      name
-      episode
-      air_date
-      characters {
-        id
-        name
-        image
-      }
-    }
-  }
-`;
-
-/* ================= TYPES ================= */
 interface Character {
   id: string;
   name?: string | null;
@@ -36,122 +18,114 @@ interface Episode {
   characters: Character[];
 }
 
-interface EpisodeData {
-  episode: Episode | null;
-}
-
-/* ================= LOADING COMPONENT ================= */
+/* ---------- STATES ---------- */
 function LoadingState() {
-  return (
-    <div className="loading-state">
-      <p className="title">Loading episode...</p>
-      <div className="skeleton-grid">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="skeleton-card"></div>
-        ))}
-      </div>
-      <style jsx>{`
-        .skeleton-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-          gap: 20px;
-          margin-top: 20px;
-        }
-        .skeleton-card {
-          height: 140px;
-          border-radius: 12px;
-          background: linear-gradient(
-            90deg,
-            rgba(200, 200, 200, 0.2) 25%,
-            rgba(200, 200, 200, 0.35) 50%,
-            rgba(200, 200, 200, 0.2) 75%
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite linear;
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}</style>
-    </div>
-  );
+  return <p>Loading episode...</p>;
 }
 
-/* ================= ERROR COMPONENT ================= */
 function ErrorState({ message }: { message?: string }) {
-  return <p className="title error">{message ?? "Error loading episode"}</p>;
+  return <p style={{ color: "red" }}>{message ?? "Error loading episode"}</p>;
 }
 
-/* ================= EMPTY COMPONENT ================= */
 function EmptyState({ message }: { message?: string }) {
-  return <p className="title empty">{message ?? "No episode found"}</p>;
+  return <p>{message ?? "No episode found"}</p>;
 }
 
-/* ================= MAIN COMPONENT ================= */
+/* ---------- MAIN COMPONENT ---------- */
 export default function EpisodePage() {
   const params = useParams<{ id: string }>();
+  const [episode, setEpisode] = useState<Episode | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data, loading, error } = useQuery<EpisodeData>(GET_EPISODE, {
-    variables: { id: params.id },
-  });
+  useEffect(() => {
+    if (!params?.id) {
+      setError("Invalid episode ID");
+      setLoading(false);
+      return;
+    }
 
-  /* ---------- ERROR ---------- */
-  if (error) return <ErrorState message="Failed to load episode" />;
+    const fetchEpisode = async () => {
+      try {
+        const res = await fetch("https://rickandmortyapi.com/graphql", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: `
+              query GetEpisode($id: ID!) {
+                episode(id: $id) {
+                  name
+                  episode
+                  air_date
+                  characters {
+                    id
+                    name
+                    image
+                  }
+                }
+              }
+            `,
+            variables: { id: Number(params.id) },
+          }),
+        });
 
-  /* ---------- LOADING ---------- */
-  if (loading && !data) return <LoadingState />;
+        const json = await res.json();
+        if (!json.data?.episode) {
+          setEpisode(null);
+        } else {
+          setEpisode(json.data.episode);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch episode");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  /* ---------- NO DATA ---------- */
-  if (!data || !data.episode) return <EmptyState />;
+    fetchEpisode();
+  }, [params?.id]);
 
-  /* ---------- DESTRUCTURE FIELDS ---------- */
-  const { name, episode: epCode, air_date, characters } = data.episode;
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
+  if (!episode) return <EmptyState />;
+
+  const { name, episode: epCode, air_date, characters } = episode;
 
   return (
     <main className="page-episode-detail">
       <div className="container">
         {/* BACK BUTTON */}
         <div className="back-button-wrapper">
-          <Link href="/episodes" className="view-episodes-btn">
-            ← Back to Episode List
-          </Link>
+          <Link href="/episodes">← Back to Episode List</Link>
         </div>
 
         {/* EPISODE HEADER */}
-        <div className="episode-detail-card">
-          <div className="episode-header">
-            <span className="episode-badge">{epCode ?? "Unknown Episode"}</span>
-            <h1 className="episode-title">{name ?? "Untitled Episode"}</h1>
-            <p className="episode-airdate">Air Date: {air_date ?? "Unknown"}</p>
-          </div>
-        </div>
+        <h1>{name ?? "Untitled Episode"}</h1>
+        <p>
+          Code: {epCode ?? "Unknown"} | Air Date: {air_date ?? "Unknown"}
+        </p>
 
         {/* CHARACTERS */}
-        <section className="episode-characters">
-          <h2 className="section-title">Characters Appeared</h2>
-
-          {characters.length === 0 ? (
-            <EmptyState message="No characters appeared in this episode" />
-          ) : (
-            <div className="episode-character-grid">
-              {characters.map((character) => (
-                <div key={character.id} className="episode-character-card">
-                  <Image
-                    src={character.image ?? "/placeholder-character.png"}
-                    alt={character.name ?? "Unknown Character"}
-                    width={140}
-                    height={140}
-                    className="episode-character-image"
-                  />
-                  <span className="episode-character-name">
-                    {character.name ?? "Unknown Character"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <h2>Characters Appeared</h2>
+        {characters.length === 0 ? (
+          <EmptyState message="No characters appeared in this episode" />
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginTop: "10px" }}>
+            {characters.map((char) => (
+              <div key={char.id} style={{ textAlign: "center" }}>
+                <Image
+                  src={char.image ?? "/placeholder-character.png"}
+                  alt={char.name ?? "Unknown Character"}
+                  width={140}
+                  height={140}
+                  style={{ borderRadius: "12px" }}
+                />
+                <p>{char.name ?? "Unknown Character"}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
