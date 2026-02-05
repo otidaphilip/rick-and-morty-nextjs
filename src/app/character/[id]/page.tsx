@@ -1,13 +1,8 @@
-"use client";
-
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
-import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
 /* ================= GRAPHQL QUERY ================= */
-const GET_CHARACTER = gql`
+const GET_CHARACTER = `
   query GetCharacter($id: ID!) {
     character(id: $id) {
       name
@@ -30,7 +25,7 @@ const GET_CHARACTER = gql`
 interface Episode {
   id: string;
   name: string;
-  episode: string; // e.g. "S01E01"
+  episode: string;
 }
 
 interface Location {
@@ -46,42 +41,54 @@ interface Character {
   episode?: Episode[] | null;
 }
 
-interface CharacterData {
-  character: Character | null;
+/* ================= SERVER FETCH ================= */
+async function getCharacter(id: string): Promise<Character | null> {
+  try {
+    const res = await fetch("https://rickandmortyapi.com/graphql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: GET_CHARACTER,
+        variables: { id: Number(id) }, // ✅ important: numeric ID
+      }),
+      next: { revalidate: 60 }, // ISR (re-fetch every 60s)
+    });
+
+    const json = await res.json();
+    return json.data?.character ?? null;
+  } catch (err) {
+    console.error("Character fetch error:", err);
+    return null;
+  }
 }
 
-/* ================= STATE COMPONENTS ================= */
-const LoadingState = () => (
-  <div className="title">
-    {/* Simple skeleton placeholder */}
-    <p>Loading character details...</p>
-  </div>
-);
+/* ================= PAGE (SSR) ================= */
+export default async function CharacterPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const { id } = params;
 
-const ErrorState = () => (
-  <div className="title">
-    <p>Error loading character. Please try again.</p>
-  </div>
-);
+  if (!id || isNaN(Number(id))) {
+    return (
+      <div className="title">
+        <p>Invalid character ID.</p>
+        <Link href="/">← Back to Character List</Link>
+      </div>
+    );
+  }
 
-const EmptyState = ({ message }: { message?: string }) => (
-  <div className="title">
-    <p>{message ?? "No data available."}</p>
-  </div>
-);
+  const character = await getCharacter(id);
 
-/* ================= COMPONENT ================= */
-export default function CharacterPage() {
-  const params = useParams<{ id: string }>();
-  const { data, loading, error } = useQuery<CharacterData>(GET_CHARACTER, {
-    variables: { id: params.id },
-  });
-
-  if (loading && !data) return <LoadingState />;
-  if (error) return <ErrorState />;
-
-  const character = data?.character;
-  if (!character) return <EmptyState message="Character not found" />;
+  if (!character) {
+    return (
+      <div className="title">
+        <p>Character not found.</p>
+        <Link href="/">← Back to Character List</Link>
+      </div>
+    );
+  }
 
   const episodesAppeared = character.episode ?? [];
 
@@ -95,9 +102,8 @@ export default function CharacterPage() {
           </Link>
         </div>
 
-        {/* CHARACTER & EPISODES LAYOUT */}
         <div className="character-layout">
-          {/* LEFT SIDE – CHARACTER DETAILS */}
+          {/* LEFT SIDE */}
           <div className="character-left">
             <div className="character-card1">
               <Image
@@ -115,50 +121,36 @@ export default function CharacterPage() {
                 </h1>
 
                 <div className="character-meta">
-                  <p>
-                    <span className="label">Status:</span>{" "}
-                    {character.status ?? "Unknown"}
-                  </p>
-                  <p>
-                    <span className="label">Species:</span>{" "}
-                    {character.species ?? "Unknown"}
-                  </p>
-                  <p>
-                    <span className="label">Last known location:</span>{" "}
-                    {character.location?.name ?? "Unknown"}
-                  </p>
+                  <p><span className="label">Status:</span> {character.status ?? "Unknown"}</p>
+                  <p><span className="label">Species:</span> {character.species ?? "Unknown"}</p>
+                  <p><span className="label">Last known location:</span> {character.location?.name ?? "Unknown"}</p>
                 </div>
 
                 <div className="seen-info">
-                  <p>
-                    <span className="label">First seen:</span>{" "}
-                    {episodesAppeared[0]?.name ?? "Unknown"}
-                  </p>
-                  <p>
-                    <span className="label">Last seen:</span>{" "}
-                    {episodesAppeared[episodesAppeared.length - 1]?.name ?? "Unknown"}
-                  </p>
+                  <p><span className="label">First seen:</span> {episodesAppeared[0]?.name ?? "Unknown"}</p>
+                  <p><span className="label">Last seen:</span> {episodesAppeared[episodesAppeared.length - 1]?.name ?? "Unknown"}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* RIGHT SIDE – EPISODES */}
+          {/* RIGHT SIDE */}
           <div className="character-right">
             <section className="episodes-section">
               <h2 className="section-title">Episodes Appeared In</h2>
 
               {episodesAppeared.length === 0 ? (
-                <EmptyState message="This character has not appeared in any episodes." />
+                <p className="title">This character has not appeared in any episodes.</p>
               ) : (
                 <div className="episodes-grid">
                   {episodesAppeared.map((ep) => {
                     const episodeCode = ep.episode ?? "??";
-                    const seasonNumber = episodeCode.match(/S(\d+)E\d+/)?.[1] ?? "??";
+                    const seasonNumber =
+                      episodeCode.match(/S(\d+)E\d+/)?.[1] ?? "??";
 
                     return (
                       <div key={ep.id} className="episode-card">
-                        <span className="episode-title">{ep.name ?? "Unknown Episode"}</span>
+                        <span className="episode-title">{ep.name}</span>
                         <span className="episode-season">
                           Season {seasonNumber} – {episodeCode}
                         </span>
