@@ -9,14 +9,8 @@ const GET_CHARACTER = `
       status
       species
       image
-      location {
-        name
-      }
-      episode {
-        id
-        name
-        episode
-      }
+      location { name }
+      episode { id name episode }
     }
   }
 `;
@@ -28,16 +22,12 @@ interface Episode {
   episode: string;
 }
 
-interface Location {
-  name?: string | null;
-}
-
 interface Character {
   name?: string | null;
   status?: string | null;
   species?: string | null;
   image?: string | null;
-  location?: Location | null;
+  location?: { name?: string | null } | null;
   episode?: Episode[] | null;
 }
 
@@ -49,10 +39,12 @@ async function getCharacter(id: string): Promise<Character | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         query: GET_CHARACTER,
-        variables: { id: Number(id) }, // ✅ important: numeric ID
+        variables: { id: Number(id) }, // API requires number
       }),
-      next: { revalidate: 60 }, // ISR (re-fetch every 60s)
+      next: { revalidate: 60 },
     });
+
+    if (!res.ok) throw new Error("API request failed");
 
     const json = await res.json();
     return json.data?.character ?? null;
@@ -66,9 +58,9 @@ async function getCharacter(id: string): Promise<Character | null> {
 export default async function CharacterPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>; // 👈 params is now a Promise
 }) {
-  const { id } = params;
+  const { id } = await params; // ✅ FIX: await params
 
   if (!id || isNaN(Number(id))) {
     return (
@@ -95,7 +87,6 @@ export default async function CharacterPage({
   return (
     <main className="page-character-detail">
       <div className="container">
-        {/* BACK BUTTON */}
         <div className="back-button-wrapper">
           <Link href="/" className="view-episodes-btn">
             ← Back to Character List
@@ -144,15 +135,14 @@ export default async function CharacterPage({
               ) : (
                 <div className="episodes-grid">
                   {episodesAppeared.map((ep) => {
-                    const episodeCode = ep.episode ?? "??";
-                    const seasonNumber =
-                      episodeCode.match(/S(\d+)E\d+/)?.[1] ?? "??";
+                    const code = ep.episode ?? "??";
+                    const season = code.match(/S(\d+)E\d+/)?.[1] ?? "??";
 
                     return (
                       <div key={ep.id} className="episode-card">
                         <span className="episode-title">{ep.name}</span>
                         <span className="episode-season">
-                          Season {seasonNumber} – {episodeCode}
+                          Season {season} – {code}
                         </span>
                       </div>
                     );
