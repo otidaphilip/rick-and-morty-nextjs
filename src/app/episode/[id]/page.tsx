@@ -42,11 +42,10 @@ async function getEpisode(id: string): Promise<Episode | null> {
         query: GET_EPISODE,
         variables: { id: String(id) },
       }),
-      cache: "no-store", // safer for dynamic pages
+      cache: "no-store",
     });
 
     const json = await res.json();
-
     if (!json.data?.episode) return null;
 
     return json.data.episode;
@@ -56,14 +55,13 @@ async function getEpisode(id: string): Promise<Episode | null> {
   }
 }
 
-/* ================= PAGE (SSR) ================= */
+/* ================= PAGE ================= */
 export default async function EpisodePage({
   params,
 }: {
-  params: Promise<{ id: string }>; // ⚠️ IMPORTANT FIX
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; // ⚠️ MUST AWAIT PARAMS
-
+  const { id } = await params;
   const episode = await getEpisode(id);
 
   if (!episode) notFound();
@@ -74,35 +72,57 @@ export default async function EpisodePage({
     <main className="page-episode-detail">
       <div className="container">
         <div className="back-button-wrapper">
-          <Link href="/episodes">← Back to Episode List</Link>
+          <Link href="/episodes" className="view-episodes-btn">
+            ← Back to Episodes
+          </Link>
         </div>
 
-        <h1>{name}</h1>
-        <p>
-          Code: {epCode} | Air Date: {air_date}
-        </p>
+        {/* ================= EPISODE HEADER ================= */}
+        <div className="episode-hero-card">
+          <h1 className="episode-hero-title">{name}</h1>
 
-        <h2>Characters Appeared</h2>
+          <div className="episode-meta-grid">
+            <div className="meta-pill">
+              <span>Episode Code</span>
+              <strong>{epCode}</strong>
+            </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "20px",
-            marginTop: "10px",
-          }}
-        >
+            <div className="meta-pill">
+              <span>Air Date</span>
+              <strong>{air_date}</strong>
+            </div>
+
+            <div className="meta-pill">
+              <span>Duration</span>
+              <strong>22 min</strong>
+            </div>
+
+            <div className="meta-pill">
+              <span>Characters</span>
+              <strong>{characters.length}</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= CHARACTERS SECTION ================= */}
+        <h2 className="characters-section-title">Characters Appeared</h2>
+
+        <div className="episode-character-grid">
           {characters.map((char) => (
-            <div key={char.id} style={{ textAlign: "center" }}>
+            <Link
+              key={char.id}
+              href={`/character/${char.id}`}
+              className="episode-character-card"
+            >
               <Image
                 src={char.image ?? "/placeholder-character.png"}
                 alt={char.name ?? "Unknown Character"}
-                width={140}
-                height={140}
-                style={{ borderRadius: "12px" }}
+                width={170}
+                height={170}
+                className="episode-character-image"
               />
-              <p>{char.name}</p>
-            </div>
+              <div className="episode-character-name">{char.name}</div>
+            </Link>
           ))}
         </div>
       </div>
