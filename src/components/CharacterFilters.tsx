@@ -8,37 +8,36 @@ export default function CharacterFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [name, setName] = useState("");
-  const [species, setSpecies] = useState("all");
-  const [gender, setGender] = useState("all");
-  const [status, setStatus] = useState("all");
+  // Local state for the input field (to allow typing without instant navigation)
+  const [name, setName] = useState(searchParams.get("name") || "");
 
-  // Sync local state with URL
-  useEffect(() => {
-    setName(searchParams.get("name") || "");
-    setSpecies(searchParams.get("species") || "all");
-    setGender(searchParams.get("gender") || "all");
-    setStatus(searchParams.get("status") || "all");
-  }, [searchParams]);
+  // Derived state for selects (read directly from URL for single source of truth)
+  const species = searchParams.get("species") || "all";
+  const gender = searchParams.get("gender") || "all";
+  const status = searchParams.get("status") || "all";
 
   const updateURL = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (!value || value === "all") params.delete(key);
-      else params.set(key, value);
+      if (!value || value === "all") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
     });
 
-    params.delete("page"); // reset pagination when filters change
-    router.push(`?${params.toString()}`);
+    params.delete("page"); // Always reset to page 1 on filter change
+    router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // Debounced search
+  // Debounced search for the name input
   useEffect(() => {
     const delay = setTimeout(() => {
-      updateURL({ name });
+      if (name !== (searchParams.get("name") || "")) {
+        updateURL({ name });
+      }
     }, 400);
-
     return () => clearTimeout(delay);
   }, [name]);
 
@@ -52,22 +51,18 @@ export default function CharacterFilters() {
         <div className="filters">
           <select
             value={species}
-            onChange={(e) => {
-              setSpecies(e.target.value);
-              updateURL({ species: e.target.value });
-            }}
+            onChange={(e) => updateURL({ species: e.target.value })}
           >
             <option value="all">All Species</option>
             <option value="Human">Human</option>
             <option value="Alien">Alien</option>
+            <option value="Robot">Robot</option>
+            <option value="Humanoid">Humanoid</option>
           </select>
 
           <select
             value={gender}
-            onChange={(e) => {
-              setGender(e.target.value);
-              updateURL({ gender: e.target.value });
-            }}
+            onChange={(e) => updateURL({ gender: e.target.value })}
           >
             <option value="all">All Genders</option>
             <option value="Male">Male</option>
@@ -78,10 +73,7 @@ export default function CharacterFilters() {
 
           <select
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              updateURL({ status: e.target.value });
-            }}
+            onChange={(e) => updateURL({ status: e.target.value })}
           >
             <option value="all">All Status</option>
             <option value="Alive">Alive</option>
