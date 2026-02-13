@@ -1,30 +1,12 @@
 "use client";
 
-import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
-
-const GET_EPISODES = gql`
-  query GetEpisodes($page: Int!) {
-    episodes(page: $page) {
-      info { next }
-      results { id name episode }
-    }
-  }
-`;
 
 type Episode = {
   id: string;
   name?: string | null;
   episode?: string | null;
-};
-
-type EpisodesResponse = {
-  episodes: {
-    info: { next: number | null };
-    results: Episode[];
-  };
 };
 
 export default function EpisodesClient({
@@ -36,32 +18,53 @@ export default function EpisodesClient({
 }) {
   const [allEpisodes, setAllEpisodes] = useState<Episode[]>(initialEpisodes);
   const [nextPage, setNextPage] = useState<number | null>(initialNextPage);
-
-  const { fetchMore, loading } = useQuery<EpisodesResponse>(GET_EPISODES, {
-    variables: { page: 1 },
-    skip: true,
-  });
+  const [loading, setLoading] = useState(false);
 
   const loadMoreEpisodes = async () => {
-    if (!nextPage) return;
+    if (!nextPage || loading) return;
+    setLoading(true);
 
-    const { data } = await fetchMore({ variables: { page: nextPage } });
-    if (!data?.episodes) return;
+    try {
+      const res = await fetch("https://rickandmortyapi.com/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `
+            query GetEpisodes($page: Int!) {
+              episodes(page: $page) {
+                info { next }
+                results { id name episode }
+              }
+            }
+          `,
+          variables: { page: nextPage },
+        }),
+      });
 
-    setAllEpisodes((prev) => [...prev, ...data.episodes.results]);
-    setNextPage(data.episodes.info.next);
+      const json = await res.json();
+      const data = json.data.episodes;
+
+      // Append new episodes to the existing list
+      setAllEpisodes((prev) => [...prev, ...data.results]);
+      setNextPage(data.info.next);
+    } catch (err) {
+      console.error("Failed to load more episodes:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 🔥 GROUP EPISODES BY SEASON
+  // 🔥 Grouping logic: Automatically re-runs when allEpisodes changes
   const episodesBySeason = useMemo(() => {
     const groups: Record<string, Episode[]> = {};
 
     allEpisodes.forEach((ep) => {
       const seasonMatch = ep.episode?.match(/S(\d+)/);
-      const season = seasonMatch ? `Season ${parseInt(seasonMatch[1])}` : "Unknown Season";
+      const seasonNum = seasonMatch ? parseInt(seasonMatch[1]) : null;
+      const seasonLabel = seasonNum ? `Season ${seasonNum}` : "Unknown Season";
 
-      if (!groups[season]) groups[season] = [];
-      groups[season].push(ep);
+      if (!groups[seasonLabel]) groups[seasonLabel] = [];
+      groups[seasonLabel].push(ep);
     });
 
     return groups;
@@ -72,21 +75,25 @@ export default function EpisodesClient({
       <div className="container">
         <h1 className="title">Episodes</h1>
 
-        <div className="back-button-wrapper">
+        <div className="back-button-wrapper" style={{ marginBottom: '20px' }}>
           <Link href="/" className="view-episodes-btn">
             ← Back to Characters
           </Link>
         </div>
 
-        {/* 🔥 SEASON GROUPS */}
+        {/* Render Seasons */}
         {Object.entries(episodesBySeason).map(([season, episodes]) => (
-          <div key={season} className="season-block">
-            <h2 className="season-title">{season}</h2>
+          <div key={season} className="season-block" style={{ marginBottom: '40px' }}>
+            <h2 className="season-title" style={{ borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+              {season}
+            </h2>
 
-            <div className="episodes-grid">
+            <div className="episodes-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', marginTop: '15px' }}>
               {episodes.map((ep) => (
                 <Link key={ep.id} href={`/episode/${ep.id}`} className="episode-card">
-                  <div className="episode-code">{ep.episode ?? "N/A"}</div>
+                  <div className="episode-code" style={{ fontWeight: 'bold', color: '#000000' }}>
+                    {ep.episode ?? "N/A"}
+                  </div>
                   <div className="episode-name">{ep.name ?? "Untitled"}</div>
                 </Link>
               ))}
@@ -94,9 +101,15 @@ export default function EpisodesClient({
           </div>
         ))}
 
+        {/* Load More Button */}
         {nextPage && (
-          <div style={{ textAlign: "center" }}>
-            <button onClick={loadMoreEpisodes} className="load-more-btn" disabled={loading}>
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <button 
+              onClick={loadMoreEpisodes} 
+              className="load-more-btn" 
+              disabled={loading}
+              style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
+            >
               {loading ? "Loading..." : "Load More Episodes →"}
             </button>
           </div>

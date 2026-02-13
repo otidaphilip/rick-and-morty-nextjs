@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import CharacterFilters from "@/components/CharacterFilters";
 
-// 1. Updated fetcher to include all filter parameters
+// Updated fetcher to include all filter parameters
 async function getCharacters(page: number, name: string, species: string, gender: string, status: string) {
   const res = await fetch("https://rickandmortyapi.com/graphql", {
     method: "POST",
